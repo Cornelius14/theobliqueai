@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import TaskColumn, { Column } from './TaskColumn';
@@ -231,7 +230,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ className }) => {
     const targetColumn = columns.find(col => col.id === targetColumnId);
     if (targetColumn && draggedTask) {
       toast({
-        title: "Task moved",
+        title: "Deal moved",
         description: `${draggedTask.title} moved to ${targetColumn.title}`,
       });
     }
