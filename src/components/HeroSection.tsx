@@ -33,8 +33,7 @@ const HeroSection = () => {
         
         {/* Typewriter Demo Card */}
         <div className="mt-6 rounded-2xl border shadow-sm bg-card/70 backdrop-blur p-4 md:p-6">
-          <h3 className="text-lg font-semibold text-foreground">Deal Finder (visual)</h3>
-          <p className="text-sm text-muted-foreground mt-1">Demo only – no functionality.</p>
+          <h3 className="text-lg font-semibold text-foreground">Deal Finder</h3>
 
           {/* Typewriter viewport */}
           <div className="mt-4 font-mono text-sm text-foreground relative min-h-[3rem]">
@@ -98,7 +97,7 @@ const HeroSection = () => {
           <div className="mt-3">
             <button type="button" disabled aria-disabled="true"
               className="rounded-xl px-4 py-2 font-medium border shadow-sm disabled:opacity-50 text-foreground">
-              Run query
+              find qualified targets
             </button>
           </div>
         </div>
