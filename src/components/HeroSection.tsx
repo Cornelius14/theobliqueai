@@ -31,6 +31,78 @@ const HeroSection = () => {
           Find, qualify, and engage <span className="text-foreground">real-estate sellers</span>—fast.
         </h1>
         
+        {/* Typewriter Demo Card */}
+        <div className="mt-6 rounded-2xl border shadow-sm bg-card/70 backdrop-blur p-4 md:p-6">
+          <h3 className="text-lg font-semibold text-foreground">Deal Finder (visual)</h3>
+          <p className="text-sm text-muted-foreground mt-1">Demo only – no functionality.</p>
+
+          {/* Typewriter viewport */}
+          <div className="mt-4 font-mono text-sm text-foreground relative min-h-[3rem]">
+            {/* Line 1 */}
+            <span className="tw-line tw-l1 border-r-2 border-foreground pr-[2px]">
+              find sellers of warehouses willing to sell between 2–3mm within 1 hour away of Charlotte, look at owners above the age of 65. size should be between 10,000sq to 100,000sq
+            </span>
+            {/* Line 2 */}
+            <span className="tw-line tw-l2 border-r-2 border-foreground pr-[2px]">
+              find distressed warehouse owners priced 1–2.5mm within 45 minutes of Charlotte; target owners aged 60+; size 15,000–75,000 sq ft
+            </span>
+          </div>
+
+          <style>{`
+            /* Base "typewriter" styles (CSS-only) */
+            .tw-line{
+              position:absolute; left:0; top:0;
+              white-space:nowrap; overflow:hidden;
+              width:0ch; /* animated */
+            }
+            @keyframes caret-blink { 50% { border-color: transparent; } }
+
+            /* Total cycle = 18s. L1 runs first (type → hold → erase), then L2. */
+            .tw-l1{
+              --w:170; /* characters in line 1 (approx) */
+              animation:
+                l1-typing 18s steps(var(--w)) infinite,
+                caret-blink 1s steps(1) infinite;
+            }
+            @keyframes l1-typing{
+              0%   { width:0ch;   opacity:1; }
+              40%  { width:170ch; opacity:1; }   /* type */
+              55%  { width:170ch; opacity:1; }   /* hold */
+              70%  { width:0ch;   opacity:1; }      /* erase */
+              71%  { opacity:0; }                    /* hide until next loop */
+              100% { width:0ch;   opacity:0; }
+            }
+
+            .tw-l2{
+              --w:128; /* characters in line 2 (approx) */
+              animation:
+                l2-typing 18s steps(var(--w)) infinite,
+                caret-blink 1s steps(1) infinite;
+            }
+            @keyframes l2-typing{
+              0%   { opacity:0; width:0ch; }
+              69%  { opacity:0; width:0ch; }        /* wait while L1 runs */
+              70%  { opacity:1; width:0ch; }        /* show & start typing */
+              85%  { width:128ch; }              /* type */
+              95%  { width:128ch; }              /* hold */
+              100% { width:0ch; }                   /* erase, loop restarts */
+            }
+
+            /* Accessibility: respect reduced motion */
+            @media (prefers-reduced-motion: reduce){
+              .tw-line{ animation:none; width:auto; border-right:0; opacity:1; }
+            }
+          `}</style>
+
+          {/* Static "Run query" button purely for look */}
+          <div className="mt-3">
+            <button type="button" disabled aria-disabled="true"
+              className="rounded-xl px-4 py-2 font-medium border shadow-sm disabled:opacity-50 text-foreground">
+              Run query
+            </button>
+          </div>
+        </div>
+        
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
           Type your buy-box. AssetRadar finds the right owners, reaches them on every channel, and delivers only the ones ready to deal.
         </p>
