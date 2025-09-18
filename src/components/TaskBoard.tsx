@@ -7,42 +7,42 @@ import { Task } from './TaskCard';
 // Initial data for the task board
 const initialColumns: Column[] = [
   {
-    id: 'todo',
-    title: 'To Do',
+    id: 'prospecting',
+    title: 'Prospecting',
     color: 'muted',
     tasks: [
       {
         id: 't1',
-        title: 'Update landing page hero section',
-        description: 'Review new design mockups and update copy',
-        tag: { color: 'purple', label: 'Design' },
+        title: 'Multifamily Market Analysis - Atlanta',
+        description: 'Analyze cap rates, rent growth, and demographic trends in target submarkets',
+        tag: { color: 'blue', label: 'Acquisition' },
         dueDate: 'May 20',
         assignees: 2,
         progress: { completed: 3, total: 5 }
       },
       {
         id: 't2',
-        title: 'Social media campaign planning',
-        description: 'Outline Q2 campaign goals and content calendar',
-        tag: { color: 'accent', label: 'Marketing' },
+        title: 'Industrial Property Deal Flow Review',
+        description: 'Evaluate 12 warehouse opportunities in Nashville market',
+        tag: { color: 'blue', label: 'Acquisition' },
         dueDate: 'May 22',
         assignees: 1,
         progress: { completed: 0, total: 4 }
       },
       {
         id: 't3',
-        title: 'Set up automated testing',
-        description: 'Configure CI/CD pipeline for test automation',
-        tag: { color: 'blue', label: 'Development' },
+        title: 'Owner Outreach Campaign - Class B Apartments',
+        description: 'Contact 487 identified owners in target price range ($5-15M)',
+        tag: { color: 'purple', label: 'Marketing' },
         dueDate: 'May 24',
         assignees: 2,
         progress: { completed: 0, total: 6 }
       },
       {
         id: 't4',
-        title: 'Create brand style guide',
-        description: 'Document colors, typography, and UI components',
-        tag: { color: 'purple', label: 'Design' },
+        title: 'Underwriting Model Updates',
+        description: 'Update acquisition models for current interest rate environment',
+        tag: { color: 'green', label: 'Finance' },
         dueDate: 'May 25',
         assignees: 1,
         progress: { completed: 0, total: 3 }
@@ -50,33 +50,33 @@ const initialColumns: Column[] = [
     ]
   },
   {
-    id: 'in-progress',
-    title: 'In Progress',
+    id: 'due-diligence',
+    title: 'Due Diligence',
     color: 'blue',
     tasks: [
       {
         id: 't5',
-        title: 'API integration with payment gateway',
-        description: 'Connect payment processor and test transactions',
-        tag: { color: 'blue', label: 'Development' },
+        title: '123 Main St Apartment Complex - Phase I ESA',
+        description: 'Environmental site assessment and soil contamination review',
+        tag: { color: 'orange', label: 'Due Diligence' },
         dueDate: 'May 18',
         assignees: 1,
         progress: { completed: 2, total: 3 }
       },
       {
         id: 't6',
-        title: 'SEO optimization',
-        description: 'Improve meta descriptions and keywords across site',
-        tag: { color: 'accent', label: 'Marketing' },
+        title: 'Financial Audit - Riverside Industrial Park',
+        description: 'Review 3 years of NOI, rent rolls, and operating expenses',
+        tag: { color: 'green', label: 'Finance' },
         dueDate: 'May 19',
         assignees: 2,
         progress: { completed: 5, total: 8 }
       },
       {
         id: 't7',
-        title: 'Mobile responsive design',
-        description: 'Optimize UI for tablets and mobile devices',
-        tag: { color: 'purple', label: 'Design' },
+        title: 'Title & Survey Review - Downtown Office',
+        description: 'Examine title insurance, easements, and boundary survey',
+        tag: { color: 'red', label: 'Legal' },
         dueDate: 'May 17',
         assignees: 1,
         progress: { completed: 3, total: 4 }
@@ -84,33 +84,33 @@ const initialColumns: Column[] = [
     ]
   },
   {
-    id: 'in-review',
-    title: 'In Review',
+    id: 'under-contract',
+    title: 'Under Contract',
     color: 'amber',
     tasks: [
       {
         id: 't8',
-        title: 'Email newsletter content',
-        description: 'Review draft and provide feedback',
-        tag: { color: 'accent', label: 'Marketing' },
+        title: 'Debt Financing - $12M Acquisition Loan',
+        description: 'Coordinate with lender on loan docs and closing conditions',
+        tag: { color: 'green', label: 'Finance' },
         dueDate: 'May 15',
         assignees: 1,
         progress: { completed: 4, total: 5 }
       },
       {
         id: 't9',
-        title: 'User authentication system',
-        description: 'Code review for login and registration flows',
-        tag: { color: 'blue', label: 'Development' },
+        title: 'Property Management Transition Plan',
+        description: 'Coordinate handoff with current PM and tenant communications',
+        tag: { color: 'teal', label: 'Asset Management' },
         dueDate: 'May 16',
         assignees: 2,
         progress: { completed: 6, total: 6 }
       },
       {
         id: 't10',
-        title: 'Icon set redesign',
-        description: 'Review updated icon set for consistent branding',
-        tag: { color: 'purple', label: 'Design' },
+        title: 'Investor Capital Call - Fund II',
+        description: 'Prepare capital call notice for $8M equity requirement',
+        tag: { color: 'purple', label: 'Investor Relations' },
         dueDate: 'May 14',
         assignees: 1,
         progress: { completed: 12, total: 12 }
@@ -118,33 +118,33 @@ const initialColumns: Column[] = [
     ]
   },
   {
-    id: 'completed',
-    title: 'Completed',
+    id: 'closed',
+    title: 'Closed',
     color: 'accent',
     tasks: [
       {
         id: 't11',
-        title: 'Create user flow diagrams',
-        description: 'Document onboarding process for new users',
-        tag: { color: 'purple', label: 'Design' },
+        title: 'Oak Street Retail Center - Acquisition Complete',
+        description: 'Successfully closed $24M retail acquisition with 7.2% IRR projection',
+        tag: { color: 'blue', label: 'Acquisition' },
         dueDate: 'May 10',
         assignees: 1,
         progress: { completed: 5, total: 5 }
       },
       {
         id: 't12',
-        title: 'Setup analytics tracking',
-        description: 'Implement event tracking across main user flows',
-        tag: { color: 'blue', label: 'Development' },
+        title: 'Quarterly Investor Reporting - Q1 2024',
+        description: 'Distributed performance reports to 47 limited partners',
+        tag: { color: 'purple', label: 'Investor Relations' },
         dueDate: 'May 9',
         assignees: 1,
         progress: { completed: 4, total: 4 }
       },
       {
         id: 't13',
-        title: 'Competitive analysis report',
-        description: 'Research competitors and document findings',
-        tag: { color: 'accent', label: 'Marketing' },
+        title: 'Portfolio Refinancing - 3 Properties',
+        description: 'Completed $45M refinancing across industrial portfolio',
+        tag: { color: 'green', label: 'Finance' },
         dueDate: 'May 8',
         assignees: 2,
         progress: { completed: 7, total: 7 }
