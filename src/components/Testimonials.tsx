@@ -24,7 +24,7 @@ const Testimonials = () => {
   ];
   
   return (
-    <section className="w-full py-20 px-6 md:px-12 bg-card relative overflow-hidden">
+    <section id="testimonials" className="w-full py-20 px-6 md:px-12 bg-card relative overflow-hidden">
       {/* Background grid */}
       <div className="absolute inset-0 cosmic-grid opacity-20"></div>
       
