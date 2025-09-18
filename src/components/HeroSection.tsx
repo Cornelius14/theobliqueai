@@ -37,54 +37,107 @@ const HeroSection = () => {
 
           {/* Typewriter viewport */}
           <div className="mt-4 font-mono text-sm text-foreground relative min-h-[3rem]">
-            {/* Line 1 */}
-            <span className="tw-line tw-l1 border-r-2 border-foreground pr-[2px]">
-              find sellers of warehouses willing to sell between 2–3mm within 1 hour away of Charlotte, look at owners above the age of 65. size should be between 10,000sq to 100,000sq
+            {/* Query 1 - Line 1 */}
+            <span className="tw-line tw-q1l1 border-r-2 border-foreground pr-[2px]">
+              find sellers of warehouses willing to sell between 2–3mm within
             </span>
-            {/* Line 2 */}
-            <span className="tw-line tw-l2 border-r-2 border-foreground pr-[2px]">
-              find distressed warehouse owners priced 1–2.5mm within 45 minutes of Charlotte; target owners aged 60+; size 15,000–75,000 sq ft
+            {/* Query 1 - Line 2 */}
+            <span className="tw-line tw-q1l2 border-r-2 border-foreground pr-[2px]">
+              1 hour away of Charlotte, look at owners above the age of 65. size should be between 10,000sq to 100,000sq
+            </span>
+            {/* Query 2 - Line 1 */}
+            <span className="tw-line tw-q2l1 border-r-2 border-foreground pr-[2px]">
+              find distressed warehouse owners priced 1–2.5mm within 45 minutes of
+            </span>
+            {/* Query 2 - Line 2 */}
+            <span className="tw-line tw-q2l2 border-r-2 border-foreground pr-[2px]">
+              Charlotte; target owners aged 60+; size 15,000–75,000 sq ft
             </span>
           </div>
 
           <style>{`
             /* Base "typewriter" styles (CSS-only) */
             .tw-line{
-              position:absolute; left:0; top:0;
+              position:absolute; left:0;
               white-space:nowrap; overflow:hidden;
               width:0ch; /* animated */
             }
             @keyframes caret-blink { 50% { border-color: transparent; } }
 
-            /* Total cycle = 18s. L1 runs first (type → hold → erase), then L2. */
-            .tw-l1{
-              --w:170; /* characters in line 1 (approx) */
+            /* Total cycle = 24s. Query 1 (both lines) → Query 2 (both lines) */
+            
+            /* Query 1 Line 1 */
+            .tw-q1l1{
+              top: 0;
+              --w: 65; /* characters in query 1 line 1 */
               animation:
-                l1-typing 18s steps(var(--w)) infinite,
+                q1l1-typing 24s steps(var(--w)) infinite,
                 caret-blink 1s steps(1) infinite;
             }
-            @keyframes l1-typing{
+            @keyframes q1l1-typing{
               0%   { width:0ch;   opacity:1; }
-              40%  { width:170ch; opacity:1; }   /* type */
-              55%  { width:170ch; opacity:1; }   /* hold */
-              70%  { width:0ch;   opacity:1; }      /* erase */
-              71%  { opacity:0; }                    /* hide until next loop */
+              15%  { width:65ch;  opacity:1; }   /* type line 1 */
+              20%  { width:65ch;  opacity:1; border-right: none; }   /* hide cursor */
+              35%  { width:65ch;  opacity:1; border-right: none; }   /* hold */
+              40%  { width:0ch;   opacity:1; }      /* erase */
+              41%  { opacity:0; }                    /* hide */
               100% { width:0ch;   opacity:0; }
             }
 
-            .tw-l2{
-              --w:128; /* characters in line 2 (approx) */
+            /* Query 1 Line 2 */
+            .tw-q1l2{
+              top: 1.5rem;
+              --w: 105; /* characters in query 1 line 2 */
               animation:
-                l2-typing 18s steps(var(--w)) infinite,
+                q1l2-typing 24s steps(var(--w)) infinite,
                 caret-blink 1s steps(1) infinite;
             }
-            @keyframes l2-typing{
+            @keyframes q1l2-typing{
               0%   { opacity:0; width:0ch; }
-              69%  { opacity:0; width:0ch; }        /* wait while L1 runs */
+              19%  { opacity:0; width:0ch; }        /* wait for line 1 */
+              20%  { opacity:1; width:0ch; }        /* show & start typing */
+              35%  { width:105ch; opacity:1; }      /* type line 2 */
+              40%  { width:0ch;   opacity:1; }      /* erase */
+              41%  { opacity:0; }                    /* hide */
+              100% { width:0ch;   opacity:0; }
+            }
+
+            /* Query 2 Line 1 */
+            .tw-q2l1{
+              top: 0;
+              --w: 69; /* characters in query 2 line 1 */
+              animation:
+                q2l1-typing 24s steps(var(--w)) infinite,
+                caret-blink 1s steps(1) infinite;
+            }
+            @keyframes q2l1-typing{
+              0%   { opacity:0; width:0ch; }
+              49%  { opacity:0; width:0ch; }        /* wait for query 1 */
+              50%  { opacity:1; width:0ch; }        /* show & start typing */
+              65%  { width:69ch; opacity:1; }       /* type line 1 */
+              70%  { width:69ch; opacity:1; border-right: none; }   /* hide cursor */
+              85%  { width:69ch; opacity:1; border-right: none; }   /* hold */
+              90%  { width:0ch;  opacity:1; }       /* erase */
+              91%  { opacity:0; }                    /* hide */
+              100% { width:0ch;  opacity:0; }
+            }
+
+            /* Query 2 Line 2 */
+            .tw-q2l2{
+              top: 1.5rem;
+              --w: 62; /* characters in query 2 line 2 */
+              animation:
+                q2l2-typing 24s steps(var(--w)) infinite,
+                caret-blink 1s steps(1) infinite;
+            }
+            @keyframes q2l2-typing{
+              0%   { opacity:0; width:0ch; }
+              69%  { opacity:0; width:0ch; }        /* wait for query 2 line 1 */
               70%  { opacity:1; width:0ch; }        /* show & start typing */
-              85%  { width:128ch; }              /* type */
-              95%  { width:128ch; }              /* hold */
-              100% { width:0ch; }                   /* erase, loop restarts */
+              85%  { width:62ch; opacity:1; }       /* type line 2 */
+              90%  { width:0ch;  opacity:1; }       /* erase */
+              91%  { opacity:0; }                    /* hide */
+              100% { width:0ch;  opacity:0; }
             }
 
             /* Accessibility: respect reduced motion */
