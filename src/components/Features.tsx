@@ -8,49 +8,49 @@ const Features = () => {
   
   const features = [
     {
-      title: "Payment Automation",
-      description: "Automate payment processing and reconciliation to reduce manual errors and improve efficiency.",
-      expandedDescription: "Set up automated payment workflows with custom approval chains. Schedule recurring payments, automate invoice processing, and create conditional rules for different transaction types. Reduce manual intervention and ensure compliance with financial regulations.",
+      title: "Qualification Logic",
+      description: "Screen owners by price band, timeline, condition, motivation, and off-market intent.",
+      expandedDescription: "Advanced filtering system that automatically screens property owners based on your specific buy-box criteria. Set parameters for price ranges, seller motivation levels, property conditions, and timing preferences. Our AI analyzes owner behavior patterns to identify the most qualified prospects.",
       icon: (
         <Layers size={24} className="text-cosmic-accent" />
       )
     },
     {
-      title: "Real-time Analytics",
-      description: "Monitor financial performance with real-time dashboards and comprehensive reporting.",
-      expandedDescription: "Track key financial metrics with customizable dashboards. Monitor cash flow, payment volumes, and transaction success rates in real-time. Generate detailed reports for stakeholders and identify trends before they impact your business.",
+      title: "Outreach Autopilot",
+      description: "Omnichannel sequences (email, SMS, voicemail, voice) that sound human and persist until you get a yes or no.",
+      expandedDescription: "Automated multi-channel outreach campaigns that coordinate across email, SMS, voicemail, and live calls. AI-powered messaging that adapts based on responses and maintains consistent follow-up until you receive a definitive answer from each prospect.",
       icon: (
         <Grid3x3 size={24} className="text-cosmic-accent" />
       )
     },
     {
-      title: "Risk Management",
-      description: "Advanced fraud detection and risk assessment tools to protect your business.",
-      expandedDescription: "Utilize machine learning algorithms to detect suspicious transactions and prevent fraud. Set up custom risk rules, monitor transaction patterns, and receive instant alerts for unusual activity. Protect your business with enterprise-grade security measures.",
+      title: "Live Handoff",
+      description: "Meetings booked, notes and transcripts synced to your CRM automatically.",
+      expandedDescription: "Seamless transition from automated outreach to live conversations. Qualified prospects are automatically booked into your calendar with full conversation history, transcripts, and qualification notes synced directly to your CRM system.",
       icon: (
         <LayoutDashboard size={24} className="text-cosmic-accent" />
       )
     },
     {
-      title: "Compliance Tools",
-      description: "Built-in compliance features to meet regulatory requirements effortlessly.",
-      expandedDescription: "Stay compliant with financial regulations across multiple jurisdictions. Automated KYC/AML checks, transaction monitoring, and regulatory reporting. Generate audit trails and maintain documentation to meet compliance standards.",
+      title: "Due Diligence Red Flags",
+      description: "Auto-surfaced deal killers like liens, zoning restrictions, and regulatory non-compliance.",
+      expandedDescription: "Comprehensive property analysis that automatically flags potential issues including liens, debt loads, code violations, flood zones, rent control status, pending litigation, and regulatory compliance problems before you invest time in deals.",
       icon: (
         <ListCheck size={24} className="text-cosmic-accent" />
       )
     },
     {
-      title: "Multi-currency Support",
-      description: "Process payments in multiple currencies with real-time exchange rates.",
-      expandedDescription: "Accept and process payments in over 150 currencies with competitive exchange rates. Automatic currency conversion, hedging tools, and multi-currency accounting. Expand your business globally with seamless international payment processing.",
+      title: "Speed & Cost Reduction",
+      description: "Get conversations the same day instead of weeks later with fewer wasted hours.",
+      expandedDescription: "Dramatically reduce time-to-connect from weeks to hours. Eliminate manual dialing, uncoordinated campaigns, and wasted effort on unqualified prospects. Focus your time only on property owners who are ready to transact.",
       icon: (
         <Star size={24} className="text-cosmic-accent" />
       )
     },
     {
-      title: "API Integration",
-      description: "Powerful APIs for seamless integration with your existing financial systems.",
-      expandedDescription: "Connect with your ERP, accounting software, and banking systems through our comprehensive APIs. Real-time webhooks, detailed documentation, and SDKs for popular programming languages. Build custom integrations that fit your unique business needs.",
+      title: "Analytics Dashboard",
+      description: "Track contactability %, response reasons, qualification rate, speed-to-connect, and cost per acquisition.",
+      expandedDescription: "Comprehensive metrics tracking including contact rates, response patterns, qualification success rates, average time to connect, and detailed cost analysis per acquisition. Make data-driven decisions to optimize your acquisition process.",
       icon: (
         <BookOpen size={24} className="text-cosmic-accent" />
       )
@@ -66,10 +66,10 @@ const Features = () => {
       <div className="max-w-7xl mx-auto space-y-12">
         <div className="text-center space-y-3 max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-medium tracking-tighter">
-            Everything your business needs
+            How AssetRadar works
           </h2>
           <p className="text-cosmic-muted text-lg">
-            Comprehensive fintech solutions to streamline your financial operations and drive growth
+            From buy-box to qualified conversations—automated real estate acquisition at scale
           </p>
         </div>
         

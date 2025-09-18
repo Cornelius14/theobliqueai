@@ -6,54 +6,38 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 const Pricing = () => {
   const plans = [
     {
-      name: "Starter",
-      price: "Free",
-      description: "Perfect for small businesses starting their fintech journey",
+      name: "Teams",
+      price: "Custom",
+      description: "For real estate acquisition teams ready to scale their operations",
       features: [
-        "Up to 100 transactions/month",
-        "Basic payment processing",
-        "Standard reporting",
-        "Email support",
-        "Basic fraud protection"
+        "Unlimited property searches",
+        "Omnichannel outreach automation",
+        "Advanced qualification logic",
+        "Due diligence red flag detection", 
+        "Live handoff to calendar",
+        "CRM integrations",
+        "Analytics dashboard"
       ],
-      buttonText: "Get Started",
-      buttonVariant: "outline",
-      popular: false
-    },
-    {
-      name: "Professional",
-      price: "$99",
-      period: "per month",
-      description: "Ideal for growing businesses with higher transaction volumes",
-      features: [
-        "Up to 10,000 transactions/month",
-        "Advanced payment processing",
-        "Real-time analytics",
-        "Multi-currency support",
-        "Advanced fraud protection",
-        "API access",
-        "Priority support"
-      ],
-      buttonText: "Start 14-day trial",
+      buttonText: "Book a 15-minute demo",
       buttonVariant: "default",
-      popular: true
+      popular: false
     },
     {
       name: "Enterprise",
       price: "Custom",
-      description: "For large organizations with complex financial operations",
+      description: "For large real estate organizations with complex acquisition needs",
       features: [
-        "Unlimited transactions",
-        "Custom payment workflows",
+        "Everything in Teams",
+        "Custom workflow automation",
         "Advanced compliance tools",
         "Dedicated infrastructure",
         "White-label solutions",
         "Dedicated account manager",
         "24/7 premium support"
       ],
-      buttonText: "Contact Sales",
+      buttonText: "Book a 15-minute demo", 
       buttonVariant: "outline",
-      popular: false
+      popular: true
     }
   ];
   
@@ -62,14 +46,14 @@ const Pricing = () => {
       <div className="max-w-7xl mx-auto space-y-16">
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-medium tracking-tighter text-foreground">
-            Transparent pricing for every stage
+            Teams & Enterprise pricing
           </h2>
           <p className="text-muted-foreground text-lg">
-            Scale your financial operations with plans that grow with your business
+            Custom pricing discussed on a call to scope your volumes, domains, and compliance needs
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {plans.map((plan, index) => (
             <div 
               key={index}
@@ -90,7 +74,6 @@ const Pricing = () => {
                 
                 <div className="mb-4">
                   <div className="text-3xl font-bold tracking-tighter text-foreground">{plan.price}</div>
-                  {plan.period && <div className="text-sm text-muted-foreground">{plan.period}</div>}
                 </div>
                 
                 <p className="text-muted-foreground mb-6">{plan.description}</p>
@@ -126,7 +109,7 @@ const Pricing = () => {
         </div>
         
         <div className="text-center text-muted-foreground">
-          Have questions? <a href="#" className="text-primary hover:underline">Contact our sales team</a>
+          Results vary by data coverage, provider limits, and buy-box strictness. <a href="#" className="text-primary hover:underline">Book a 15-minute demo</a>
         </div>
       </div>
     </section>

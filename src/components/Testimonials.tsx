@@ -4,21 +4,21 @@ import React from 'react';
 const Testimonials = () => {
   const testimonials = [
     {
-      quote: "Our payment processing efficiency increased by 40% and transaction failures dropped to near zero. The automation features are game-changing.",
-      author: "Sarah Johnson",
-      position: "CFO at TechCorp",
+      quote: "612 warehouses identified in Nashville; 487 contactable; 121 live connects; 6 at target price. First live call in ~58 minutes.",
+      author: "Southeast Industrial",
+      position: "Industrial Acquisition Team",
       avatar: "bg-cosmic-light/30"
     },
     {
-      quote: "The real-time analytics and fraud detection capabilities have saved us millions. We can spot issues before they become problems.",
-      author: "Michael Chen",
-      position: "Head of Risk at FinanceFlow",
+      quote: "1,940 small multifamily units; 76 qualified sellers; 9 under diligence within 14 days.",
+      author: "NYC Multifamily Group",
+      position: "Acquisition Manager",
       avatar: "bg-cosmic-light/20"
     },
     {
-      quote: "Compliance used to be a nightmare. Now our regulatory reporting is automated and we're always audit-ready.",
-      author: "Leila Rodriguez",
-      position: "Operations Director at GlobalPay",
+      quote: "Identified luxury homeowners in legal STR markets. Outreach confirmed interest and pricing. Same-day qualified calls booked.",
+      author: "TheSolaireCollection.com",
+      position: "STR Portfolio Manager",
       avatar: "bg-cosmic-light/40"
     }
   ];
@@ -31,10 +31,10 @@ const Testimonials = () => {
       <div className="max-w-7xl mx-auto space-y-16 relative z-10">
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-medium tracking-tighter text-foreground">
-            Trusted by finance teams worldwide
+            Real results from acquisition teams
           </h2>
           <p className="text-muted-foreground text-lg">
-            See how our platform transforms financial operations for businesses
+            See how AssetRadar transforms real estate acquisition workflows
           </p>
         </div>
         

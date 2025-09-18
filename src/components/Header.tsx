@@ -68,7 +68,7 @@ const Header = () => {
                 )}
                 onClick={handleNavClick('features')}
               >
-                <CircleDot size={16} className="inline-block mr-1.5" /> Features
+                Product
               </ToggleGroupItem>
               <ToggleGroupItem 
                 value="dashboard" 
@@ -78,7 +78,17 @@ const Header = () => {
                 )}
                 onClick={handleNavClick('dashboard')}
               >
-                <LayoutDashboard size={16} className="inline-block mr-1.5" /> Dashboard
+                How it works
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="testimonials" 
+                className={cn(
+                  "px-4 py-2 rounded-full transition-colors relative",
+                  activePage === 'testimonials' ? 'text-accent-foreground bg-accent' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                )}
+                onClick={handleNavClick('testimonials')}
+              >
+                Case studies
               </ToggleGroupItem>
               <ToggleGroupItem 
                 value="pricing" 
@@ -88,7 +98,7 @@ const Header = () => {
                 )}
                 onClick={handleNavClick('pricing')}
               >
-                <DollarSign size={16} className="inline-block mr-1.5" /> Pricing
+                Pricing
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
@@ -105,7 +115,7 @@ const Header = () => {
                 }`}
                 onClick={handleNavClick('features')}
               >
-                <CircleDot size={16} className="inline-block mr-1.5" /> Features
+                Product
               </a>
               <a 
                 href="#dashboard" 
@@ -114,7 +124,16 @@ const Header = () => {
                 }`}
                 onClick={handleNavClick('dashboard')}
               >
-                <LayoutDashboard size={16} className="inline-block mr-1.5" /> Dashboard
+                How it works
+              </a>
+              <a 
+                href="#testimonials" 
+                className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                  activePage === 'testimonials' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+                onClick={handleNavClick('testimonials')}
+              >
+                Case studies
               </a>
               <a 
                 href="#pricing" 
@@ -123,7 +142,7 @@ const Header = () => {
                 }`}
                 onClick={handleNavClick('pricing')}
               >
-                <DollarSign size={16} className="inline-block mr-1.5" /> Pricing
+                Pricing
               </a>
               
               {/* Add theme toggle for mobile */}
@@ -155,7 +174,7 @@ const Header = () => {
             <Sun size={18} className={`${!isDarkMode ? 'text-primary' : 'text-muted-foreground'}`} />
           </div>
           <div className="rounded-2xl">
-            <Button variant="ghost" className="text-muted-foreground hover:text-foreground hover:bg-muted">Log in</Button>
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">Get a 15-minute demo</Button>
           </div>
         </div>
       </header>
