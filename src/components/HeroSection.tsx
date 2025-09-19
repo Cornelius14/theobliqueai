@@ -10,8 +10,8 @@ const TypewriterAnimation = () => {
   const [currentQuery, setCurrentQuery] = useState(0);
 
   const queries = [
-    "find sellers of warehouses willing to sell between 2–3mm within\n1 hour of Charlotte, owners above age 65, size 10k-100k sq ft",
-    "find distressed warehouse owners priced 1–2.5mm within 45 min of\nCharlotte, target owners aged 60+, size 15k-75k sq ft"
+    "Looking for older warehouse owners (60+) around Charlotte who might be open to selling\ndistressed properties in the $1–2.5M range, within about a 45-minute drive, and sized between 15,000 and 75,000 square feet",
+    "Find small multifamily buildings in Austin priced under $5M, with at least 8–20 units,\nowned by long-term holders who may be considering retirement or downsizing"
   ];
 
   useEffect(() => {
