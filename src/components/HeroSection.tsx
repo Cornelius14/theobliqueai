@@ -10,8 +10,12 @@ const TypewriterAnimation = () => {
   const [currentQuery, setCurrentQuery] = useState(0);
 
   const queries = [
-    "Looking for older warehouse owners (60+) around Charlotte who might be open to selling\ndistressed properties in the $1–2.5M range, within about a 45-minute drive, and sized between 15,000 and 75,000 square feet",
-    "Find small multifamily buildings in Austin priced under $5M, with at least 8–20 units,\nowned by long-term holders who may be considering retirement or downsizing"
+    "Find 20,000 SF retail space for lease in Miami around $200 PSF.",
+    "Find Dallas multifamily owners with loans maturing in the next few months who are open to refinance.",
+    "Find property owners who recently pulled permits for buildings over 100,000 SF.",
+    "Find properties in my area that are likely to need title insurance soon (based on recent filings/transactions).",
+    "Find NYC projects that recently received a TCO and may need brokerage services.",
+    "Find nearby buyers for a 200,000 SF warehouse in Illinois who recently acquired similar assets; book intro calls."
   ];
 
   useEffect(() => {
@@ -82,12 +86,12 @@ const HeroSection = () => {
         </div>
         
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-medium tracking-tighter text-balance text-foreground">
-          Find, qualify, and engage <span className="text-foreground">real-estate sellers</span>—fast.
+          Type your mandate; we book qualified meetings—fast
         </h1>
         
         {/* Typewriter Demo Card */}
         <div className="mt-6 rounded-2xl border shadow-sm bg-card/70 backdrop-blur p-4 md:p-6">
-          <h3 className="text-lg font-semibold text-foreground">Deal Finder</h3>
+          <h3 className="text-lg font-semibold text-foreground">Mandate Processor</h3>
 
           {/* Typewriter viewport */}
           <div className="mt-4 font-mono text-sm text-foreground relative min-h-[4rem] leading-relaxed">
@@ -96,23 +100,23 @@ const HeroSection = () => {
 
           {/* Static "Run query" button purely for look */}
           <div className="mt-3">
-            <button type="button" disabled aria-disabled="true"
-              className="rounded-xl px-4 py-2 font-medium border shadow-sm disabled:opacity-50 text-foreground">
-              find qualified targets
-            </button>
+          <button type="button" disabled aria-disabled="true"
+            className="rounded-xl px-4 py-2 font-medium border shadow-sm disabled:opacity-50 text-foreground">
+            find qualified targets
+          </button>
           </div>
         </div>
         
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
-          Type your buy-box. AssetRadar finds the right owners, reaches them on every channel, and delivers only the ones ready to deal.
+          Type your criteria. Oblique AI finds the right owners, buyers, borrowers, projects and spaces, reaches them on every channel, and delivers only the ones ready to deal.
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 items-center">
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground text-base h-12 px-8 transition-all duration-200 min-h-[48px]">
-            Get a 15-minute demo
-          </Button>
-          <Button variant="outline" className="border-border text-foreground hover:bg-accent hover:text-accent-foreground text-base h-12 px-8 transition-all duration-200 min-h-[48px]">
-            See a live run
+        <div className="flex justify-center pt-6">
+          <Button 
+            onClick={() => window.location.href = '/book'}
+            className="bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground text-base h-12 px-8 transition-all duration-200 min-h-[48px]"
+          >
+            Get a 30-minute demo
           </Button>
         </div>
         
