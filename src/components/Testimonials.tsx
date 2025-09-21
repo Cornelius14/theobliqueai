@@ -4,13 +4,12 @@ import React from 'react';
 const Testimonials = () => {
   const testimonials = [
     {
-      emoji: "🏨",
-      title: "TheSolaireCollection.com — STR owner sourcing",
+      title: "The Solaire Collection",
       metric: "Same-day qualified calls booked",
       quote: "Identified luxury homeowners in legal STR markets. Outreach confirmed interest and pricing. Same-day qualified calls booked.",
-      author: "TheSolaireCollection.com",
+      author: "The Solaire Collection",
       position: "STR Portfolio Manager",
-      avatar: "bg-cosmic-light/40"
+      avatar: "bg-muted"
     },
     {
       emoji: "🏭", 
@@ -19,16 +18,16 @@ const Testimonials = () => {
       quote: "612 warehouses identified in Nashville; 487 contactable; 121 live connects; 6 at target price. First live call in ~58 minutes.",
       author: "Southeast Industrial",
       position: "Industrial Acquisition Team",
-      avatar: "bg-cosmic-light/30"
+      avatar: "bg-muted"
     },
     {
       emoji: "🏢",
-      title: "NYC Multifamily (anonymized)", 
+      title: "Hudson Walk-Ups (anonymized)", 
       metric: "1,940 units → 9 under diligence in 14 days",
       quote: "1,940 small multifamily units; 76 qualified sellers; 9 under diligence within 14 days.",
-      author: "NYC Multifamily Group",
+      author: "Hudson Walk-Ups Group",
       position: "Acquisition Manager", 
-      avatar: "bg-cosmic-light/20"
+      avatar: "bg-muted"
     }
   ];
   
@@ -40,7 +39,7 @@ const Testimonials = () => {
       <div className="max-w-7xl mx-auto space-y-16 relative z-10">
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-medium tracking-tighter text-foreground">
-            Real results from acquisition teams
+            Field-proven results across use cases
           </h2>
           <p className="text-muted-foreground text-lg">
             See how Oblique AI transforms real estate acquisition workflows
@@ -54,7 +53,7 @@ const Testimonials = () => {
               className="p-6 rounded-xl border border-border bg-background/80 backdrop-blur-sm hover:border-border/60 transition-all duration-300"
             >
               <div className="flex items-center gap-3 mb-4">
-                <span className="text-2xl">{testimonial.emoji}</span>
+                {testimonial.emoji && <span className="text-2xl">{testimonial.emoji}</span>}
                 <h3 className="font-medium text-foreground text-sm leading-tight">{testimonial.title}</h3>
               </div>
               

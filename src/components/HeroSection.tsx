@@ -10,12 +10,10 @@ const TypewriterAnimation = () => {
   const [currentQuery, setCurrentQuery] = useState(0);
 
   const queries = [
-    "Find 20,000 SF retail space for lease in Miami around $200 PSF.",
-    "Find Dallas multifamily owners with loans maturing in the next few months who are open to refinance.",
-    "Find property owners who recently pulled permits for buildings over 100,000 SF.",
-    "Find properties in my area that are likely to need title insurance soon (based on recent filings/transactions).",
-    "Find NYC projects that recently received a TCO and may need brokerage services.",
-    "Find nearby buyers for a 200,000 SF warehouse in Illinois who recently acquired similar assets; book intro calls."
+    "Find value-add multifamily, 20–40 units, in Charlotte, built 1980–2005, cap ≥ 6.5%, ≤ $180k/door.",
+    "Find 18–22k SF retail for lease in Miami Beach, $180–$220 PSF, frontage ≥ 60 ft.",
+    "Find Dallas multifamily owners with loans maturing in 3–6 months, 50–150 units, LTV ≥ 65% for refinance.",
+    "Find Travis County, TX properties with recent deed filings/escrow opens likely to need title insurance in ≤45 days."
   ];
 
   useEffect(() => {
@@ -91,7 +89,7 @@ const HeroSection = () => {
         
         {/* Typewriter Demo Card */}
         <div className="mt-6 rounded-2xl border shadow-sm bg-card/70 backdrop-blur p-4 md:p-6">
-          <h3 className="text-lg font-semibold text-foreground">Mandate Processor</h3>
+          <h3 className="text-lg font-semibold text-foreground">Deal Finder</h3>
 
           {/* Typewriter viewport */}
           <div className="mt-4 font-mono text-sm text-foreground relative min-h-[4rem] leading-relaxed">

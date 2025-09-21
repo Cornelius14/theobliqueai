@@ -1,19 +1,24 @@
 
 import React from 'react';
-import { Building2, Target } from 'lucide-react';
+import logoLight from '@/assets/oblique-logo-light.png';
+import logoDark from '@/assets/oblique-logo-dark.png';
 
 const Logo = () => {
   return (
     <div className="flex items-center gap-3">
       <div className="relative h-8 w-8">
-        {/* Building silhouette */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Building2 size={16} className="text-primary" />
-        </div>
-        {/* Target rings overlay */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Target size={20} className="text-primary opacity-70" />
-        </div>
+        {/* Light mode logo */}
+        <img 
+          src={logoLight} 
+          alt="Oblique AI Logo" 
+          className="h-8 w-8 dark-mode:hidden light-mode:block"
+        />
+        {/* Dark mode logo */}
+        <img 
+          src={logoDark} 
+          alt="Oblique AI Logo" 
+          className="h-8 w-8 light-mode:hidden dark-mode:block"
+        />
       </div>
       <span className="text-xl font-medium text-foreground">Oblique AI</span>
     </div>

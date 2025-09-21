@@ -16,9 +16,10 @@ const Pricing = () => {
         "Due diligence red flag detection", 
         "Live handoff to calendar",
         "CRM integrations",
-        "Analytics dashboard"
+        "Analytics dashboard",
+        "Each team includes 10 queries per month"
       ],
-      buttonText: "Book a 15-minute demo",
+      buttonText: "Get a 30-minute demo",
       buttonVariant: "default",
       popular: false
     },
@@ -35,7 +36,7 @@ const Pricing = () => {
         "Dedicated account manager",
         "24/7 premium support"
       ],
-      buttonText: "Book a 15-minute demo", 
+      buttonText: "Get a 30-minute demo", 
       buttonVariant: "outline",
       popular: true
     }
@@ -100,6 +101,7 @@ const Pricing = () => {
                       : "w-full border-border text-foreground hover:bg-muted"
                   }
                   variant={plan.buttonVariant as "default" | "outline"}
+                  onClick={() => window.location.href = '/book'}
                 >
                   {plan.buttonText}
                 </Button>
@@ -109,7 +111,7 @@ const Pricing = () => {
         </div>
         
         <div className="text-center text-muted-foreground">
-          Results vary by data coverage, provider limits, and buy-box strictness. <a href="#" className="text-primary hover:underline">Book a 15-minute demo</a>
+          Results vary by data coverage, provider limits, and buy-box strictness. <button onClick={() => window.location.href = '/book'} className="text-primary hover:underline cursor-pointer">Get a 30-minute demo</button>
         </div>
       </div>
     </section>
