@@ -6,7 +6,7 @@ const Testimonials = () => {
     {
       title: "🏡 The Solaire Collection",
       metric: "Same-day qualified calls booked",
-      quote: "Identified luxury homeowners in legal STR markets. Outreach confirmed interest and pricing. Same-day qualified calls booked.",
+      quote: "Identified luxury homeowners in legal STR markets. Outreach confirmed interest and pricing. Using Oblique, the company scaled from 0 to 70 properties in just 2 months—becoming the fastest-growing STR property manager in the US.",
       author: "The Solaire Collection",
       position: "STR Portfolio Manager",
       avatar: "bg-muted"
