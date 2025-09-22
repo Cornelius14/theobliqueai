@@ -21,7 +21,7 @@ const Logo = () => {
         <img 
           src={obliqueLogoNew}
           alt="Oblique AI" 
-          className="h-6 w-6 brightness-0 invert dark-mode:invert light-mode:brightness-0 light-mode:invert-0" 
+          className="h-6 w-6 dark:brightness-0 dark:invert light-mode:brightness-0 light-mode:invert-0" 
           onError={() => setImageError(true)}
         />
       </span>

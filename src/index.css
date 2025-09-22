@@ -40,29 +40,29 @@
 
   .light-mode {
     --background: 0 0% 98%; /* White background */
-    --foreground: 0 0% 9%; /* Almost black text */
+    --foreground: 0 0% 15%; /* Dark gray text */
 
     --card: 0 0% 100%; /* Pure white cards */
-    --card-foreground: 0 0% 9%; /* Almost black text on cards */
+    --card-foreground: 0 0% 15%; /* Dark gray text on cards */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+    --popover-foreground: 0 0% 15%;
 
-    --primary: 0 0% 9%; /* Almost black primary */
+    --primary: 0 0% 15%; /* Dark gray primary */
     --primary-foreground: 0 0% 98%;
 
     --secondary: 0 0% 96%; /* Light grey secondary */
-    --secondary-foreground: 0 0% 9%; /* Almost black text */
+    --secondary-foreground: 0 0% 15%; /* Dark gray text */
 
     --muted: 0 0% 96%; /* Light grey muted */
-    --muted-foreground: 0 0% 45%; /* Medium grey muted text */
+    --muted-foreground: 0 0% 35%; /* Darker muted text */
 
-    --accent: 0 0% 9%; /* Almost black accent */
+    --accent: 0 0% 15%; /* Dark gray accent */
     --accent-foreground: 0 0% 98%;
 
     --border: 0 0% 89%; /* Light grey border */
     --input: 0 0% 96%;
-    --ring: 0 0% 9%; /* Almost black ring */
+    --ring: 0 0% 15%; /* Dark gray ring */
   }
 
   * {
