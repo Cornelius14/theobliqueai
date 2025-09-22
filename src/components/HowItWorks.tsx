@@ -36,7 +36,7 @@ const HowItWorks = () => {
             </li>
             <li className="relative pl-14">
               <span className="absolute left-0 top-0 h-10 w-10 rounded-full bg-white/8 ring-1 ring-white/15 light-mode:bg-black/8 light-mode:ring-black/15 flex items-center justify-center text-slate-50">
-                <svg className="h-5 w-5 text-slate-200 light-mode:text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="h-5 w-5 text-slate-200 light-mode:text-slate-800 bg-slate-950">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </span>
