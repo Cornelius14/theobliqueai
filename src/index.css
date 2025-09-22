@@ -39,30 +39,30 @@
   }
 
   .light-mode {
-    --background: 0 0% 98%; /* Very light grey */
-    --foreground: 0 0% 20%; /* Dark grey */
+    --background: 0 0% 92%; /* Less bright background */
+    --foreground: 0 0% 10%; /* Darker text for better contrast */
 
-    --card: 0 0% 96%; /* Light grey card */
-    --card-foreground: 0 0% 20%;
+    --card: 0 0% 88%; /* Less bright card background */
+    --card-foreground: 0 0% 15%;
 
-    --popover: 0 0% 96%;
-    --popover-foreground: 0 0% 20%;
+    --popover: 0 0% 88%;
+    --popover-foreground: 0 0% 15%;
 
-    --primary: 0 0% 25%; /* Dark grey primary */
-    --primary-foreground: 0 0% 98%; /* Very light grey */
+    --primary: 0 0% 15%; /* Darker primary for better contrast */
+    --primary-foreground: 0 0% 95%;
 
-    --secondary: 0 0% 92%; /* Light grey secondary */
-    --secondary-foreground: 0 0% 25%;
+    --secondary: 0 0% 80%; /* Less bright secondary */
+    --secondary-foreground: 0 0% 15%;
 
-    --muted: 0 0% 88%; /* Medium light grey */
-    --muted-foreground: 0 0% 45%; /* Medium grey */
+    --muted: 0 0% 75%; /* Less bright muted */
+    --muted-foreground: 0 0% 35%; /* Darker muted text */
 
-    --accent: 0 0% 25%; /* Dark grey accent */
-    --accent-foreground: 0 0% 98%;
+    --accent: 0 0% 15%; /* Darker accent */
+    --accent-foreground: 0 0% 95%;
 
-    --border: 0 0% 85%; /* Light grey border */
-    --input: 0 0% 90%;
-    --ring: 0 0% 25%; /* Dark grey ring */
+    --border: 0 0% 70%; /* More visible border */
+    --input: 0 0% 82%;
+    --ring: 0 0% 15%; /* Darker ring */
   }
 
   * {
