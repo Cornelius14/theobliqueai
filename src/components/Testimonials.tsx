@@ -1,28 +1,36 @@
+
 import React from 'react';
+
 const Testimonials = () => {
-  const testimonials = [{
-    title: "🏡 The Solaire Collection",
-    metric: "Same-day qualified calls booked",
-    quote: "Identified luxury homeowners in legal STR markets. Outreach confirmed interest and pricing. Same-day qualified calls booked.",
-    author: "The Solaire Collection",
-    position: "STR Portfolio Manager",
-    avatar: "bg-muted"
-  }, {
-    title: "🏭 Southeast Industrial",
-    metric: "612 warehouses → 6 at target price in ~58 minutes",
-    quote: "612 warehouses identified in Nashville; 487 contactable; 121 live connects; 6 at target price. First live call in ~58 minutes.",
-    author: "Southeast Industrial",
-    position: "Industrial Acquisition Team",
-    avatar: "bg-muted"
-  }, {
-    title: "🏢 Hudson Walk-Ups",
-    metric: "1,940 units → 9 under diligence in 14 days",
-    quote: "1,940 small multifamily units; 76 qualified sellers; 9 under diligence within 14 days.",
-    author: "Hudson Walk-Ups Group",
-    position: "Acquisition Manager",
-    avatar: "bg-muted"
-  }];
-  return <section id="cases" className="w-full py-20 px-6 md:px-12 bg-card relative overflow-hidden">
+  const testimonials = [
+    {
+      title: "🏡 The Solaire Collection",
+      metric: "Same-day qualified calls booked",
+      quote: "Identified luxury homeowners in legal STR markets. Outreach confirmed interest and pricing. Same-day qualified calls booked.",
+      author: "The Solaire Collection",
+      position: "STR Portfolio Manager",
+      avatar: "bg-muted"
+    },
+    {
+      title: "🏭 Southeast Industrial",
+      metric: "612 warehouses → 6 at target price in ~58 minutes",
+      quote: "612 warehouses identified in Nashville; 487 contactable; 121 live connects; 6 at target price. First live call in ~58 minutes.",
+      author: "Southeast Industrial",
+      position: "Industrial Acquisition Team",
+      avatar: "bg-muted"
+    },
+    {
+      title: "🏢 Hudson Walk-Ups", 
+      metric: "1,940 units → 9 under diligence in 14 days",
+      quote: "1,940 small multifamily units; 76 qualified sellers; 9 under diligence within 14 days.",
+      author: "Hudson Walk-Ups Group",
+      position: "Acquisition Manager", 
+      avatar: "bg-muted"
+    }
+  ];
+  
+  return (
+    <section id="cases" className="w-full py-20 px-6 md:px-12 bg-card relative overflow-hidden">
       {/* Background grid */}
       <div className="absolute inset-0 cosmic-grid opacity-20"></div>
       
@@ -37,9 +45,13 @@ const Testimonials = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => <div key={index} className="p-6 rounded-xl border border-border bg-background/80 backdrop-blur-sm hover:border-border/60 transition-all duration-300">
+          {testimonials.map((testimonial, index) => (
+            <div 
+              key={index}
+              className="p-6 rounded-xl border border-border bg-background/80 backdrop-blur-sm hover:border-border/60 transition-all duration-300"
+            >
               <div className="mb-4">
-                <h3 className="text-lg/7 font-semibold text-slate-950">{testimonial.title}</h3>
+                <h3 className="text-lg/7 font-semibold text-slate-100 light-mode:text-slate-900">{testimonial.title}</h3>
               </div>
               
               <div className="mb-4">
@@ -55,9 +67,12 @@ const Testimonials = () => {
                   <p className="text-xs text-muted-foreground">{testimonial.position}</p>
                 </div>
               </div>
-            </div>)}
+            </div>
+          ))}
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
+
 export default Testimonials;
