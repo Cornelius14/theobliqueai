@@ -1,6 +1,6 @@
 import React from 'react';
-import logoLight from '@/assets/oblique-logo-light.svg';
-import logoDark from '@/assets/oblique-logo-dark.svg';
+import logoLight from '@/assets/oblique-logo-light.png';
+import logoDark from '@/assets/oblique-logo-dark.png';
 
 const Logo = () => {
   return (
