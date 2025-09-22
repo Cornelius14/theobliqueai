@@ -60,6 +60,11 @@ const Header = () => {
       return;
     }
     
+    if (page === 'demo') {
+      window.location.href = '/demo';
+      return;
+    }
+    
     // Handle anchor links - check if we're on home page
     if (window.location.pathname === '/') {
       const element = document.getElementById(page);
@@ -147,6 +152,15 @@ const Header = () => {
               >
                 Pricing
               </button>
+              <button 
+                onClick={handleNavClick('demo')}
+                className={cn(
+                  "nav-pill-item",
+                  activePage === 'demo' && 'active'
+                )}
+              >
+                Demo
+              </button>
             </div>
           </div>
         </nav>
@@ -194,6 +208,14 @@ const Header = () => {
                 }`}
               >
                 Pricing
+              </button>
+              <button 
+                onClick={handleNavClick('demo')}
+                className={`px-3 py-2 text-sm rounded-md transition-colors text-left ${
+                  activePage === 'demo' ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                Demo
               </button>
               
               {/* Theme toggle for mobile */}
