@@ -10,7 +10,7 @@ const Footer = () => {
           <div className="md:col-span-2 space-y-6">
             <Logo />
             <p className="text-muted-foreground max-w-xs">
-              Find, qualify, and engage real-estate sellers—fast. AssetRadar orchestrates outreach and delivers only qualified prospects.
+              Find, qualify, and engage real-estate sellers—fast. Oblique AI orchestrates outreach and delivers only qualified prospects.
             </p>
             <div className="flex items-center gap-4">
               <a href="#" className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
@@ -46,7 +46,6 @@ const Footer = () => {
               <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Integrations</a></li>
               <li><a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a></li>
               <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Updates</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Roadmap</a></li>
             </ul>
           </div>
           
@@ -74,7 +73,7 @@ const Footer = () => {
         </div>
         
         <div className="mt-16 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center text-muted-foreground text-sm">
-          <div>© 2025 AssetRadar. All rights reserved. Not affiliated with CoStar, DealMachine, or PitchBook. Integrations require active licenses.</div>
+          <div>© 2025 Oblique AI. All rights reserved. Not affiliated with CoStar, DealMachine, or PitchBook. Integrations require active licenses.</div>
           <div className="flex gap-6 mt-4 md:mt-0">
             <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
             <a href="#" className="hover:text-foreground transition-colors">Terms</a>

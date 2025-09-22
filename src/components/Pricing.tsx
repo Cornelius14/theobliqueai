@@ -5,15 +5,15 @@ const Pricing = () => {
   const plans = [{
     name: "Teams",
     price: "Custom",
-    description: "For real estate acquisition teams ready to scale their operations",
-    features: ["Unlimited property searches", "Omnichannel outreach automation", "Advanced qualification logic", "Due diligence red flag detection", "Live handoff to calendar", "CRM integrations", "Analytics dashboard", "Each team includes 10 queries per month"],
+    description: "For real estate deal finder teams ready to scale their operations",
+    features: ["10 queries per month", "Omnichannel outreach automation", "Advanced qualification logic", "Due diligence red flag detection", "Live handoff to calendar", "CRM integrations", "Analytics dashboard"],
     buttonText: "Get a 30-minute demo",
     buttonVariant: "default",
     popular: false
   }, {
     name: "Enterprise",
     price: "Custom",
-    description: "For large real estate organizations with complex acquisition needs",
+    description: "For large real estate organizations with complex deal finder needs",
     features: ["Everything in Teams", "Custom workflow automation", "Advanced compliance tools", "Dedicated infrastructure", "White-label solutions", "Dedicated account manager", "24/7 premium support"],
     buttonText: "Get a 30-minute demo",
     buttonVariant: "outline",

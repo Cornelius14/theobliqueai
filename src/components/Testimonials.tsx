@@ -4,6 +4,7 @@ import React from 'react';
 const Testimonials = () => {
   const testimonials = [
     {
+      emoji: "🏘️",
       title: "The Solaire Collection",
       metric: "Same-day qualified calls booked",
       quote: "Identified luxury homeowners in legal STR markets. Outreach confirmed interest and pricing. Same-day qualified calls booked.",
