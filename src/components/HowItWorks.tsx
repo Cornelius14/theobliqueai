@@ -1,8 +1,6 @@
 import React from 'react';
-
 const HowItWorks = () => {
-  return (
-    <section id="how" className="w-full py-20 px-6 md:px-12 bg-background">
+  return <section id="how" className="w-full py-20 px-6 md:px-12 bg-background">
       <div className="max-w-7xl mx-auto">
         <div className="text-center space-y-4 max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tighter text-foreground">
@@ -24,7 +22,9 @@ const HowItWorks = () => {
                   <div className="flex-1">
                     <h3 className="text-lg font-medium text-foreground">Tell Us What You're Looking For</h3>
                     <div className="w-full bg-muted rounded-full h-2 mt-2">
-                      <div className="bg-primary h-2 rounded-full" style={{ width: '100%' }}></div>
+                      <div style={{
+                      width: '100%'
+                    }} className="bg-primary h-2 rounded-full"></div>
                     </div>
                   </div>
                 </div>
@@ -32,7 +32,7 @@ const HowItWorks = () => {
                 {/* Arrow */}
                 <div className="flex justify-center my-2">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-primary">
-                    <path d="M12 5v14m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M12 5v14m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
 
@@ -44,7 +44,9 @@ const HowItWorks = () => {
                   <div className="flex-1">
                     <h3 className="text-lg font-medium text-foreground">Unlock Thousands of Prospects</h3>
                     <div className="w-full bg-muted rounded-full h-2 mt-2">
-                      <div className="bg-accent h-2 rounded-full" style={{ width: '75%' }}></div>
+                      <div className="bg-accent h-2 rounded-full" style={{
+                      width: '75%'
+                    }}></div>
                     </div>
                   </div>
                 </div>
@@ -52,7 +54,7 @@ const HowItWorks = () => {
                 {/* Arrow */}
                 <div className="flex justify-center my-2">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-primary">
-                    <path d="M12 5v14m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M12 5v14m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
 
@@ -64,7 +66,9 @@ const HowItWorks = () => {
                   <div className="flex-1">
                     <h3 className="text-lg font-medium text-foreground">Let AI Do the Outreach</h3>
                     <div className="w-full bg-muted rounded-full h-2 mt-2">
-                      <div className="bg-secondary h-2 rounded-full" style={{ width: '50%' }}></div>
+                      <div className="bg-secondary h-2 rounded-full" style={{
+                      width: '50%'
+                    }}></div>
                     </div>
                   </div>
                 </div>
@@ -72,7 +76,7 @@ const HowItWorks = () => {
                 {/* Arrow */}
                 <div className="flex justify-center my-2">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-primary">
-                    <path d="M12 5v14m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M12 5v14m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
 
@@ -84,7 +88,9 @@ const HowItWorks = () => {
                   <div className="flex-1">
                     <h3 className="text-lg font-medium text-foreground">Watch Your Calendar Fill Up</h3>
                     <div className="w-full bg-muted rounded-full h-2 mt-2">
-                      <div className="bg-primary h-2 rounded-full" style={{ width: '25%' }}></div>
+                      <div className="bg-primary h-2 rounded-full" style={{
+                      width: '25%'
+                    }}></div>
                     </div>
                   </div>
                 </div>
@@ -110,9 +116,7 @@ const HowItWorks = () => {
 
             <div className="p-6 rounded-lg bg-card border border-border">
               <h3 className="font-medium text-foreground mb-4">Oblique AI's agent calls, texts, leaves voicemails and emails every lead on your behalf, qualifying them in real time.</h3>
-              <p className="text-sm text-muted-foreground">
-                Our AI handles all outreach across multiple channels, qualifying prospects against your buy-box requirements automatically.
-              </p>
+              <p className="text-sm text-muted-foreground">Our AI handles all outreach across multiple channels, qualifying prospects against your criteria requirements automatically.</p>
             </div>
 
             <div className="p-6 rounded-lg bg-card border border-border">
@@ -124,8 +128,6 @@ const HowItWorks = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default HowItWorks;
