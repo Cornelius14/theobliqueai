@@ -8,7 +8,7 @@ const HowItWorks = () => {
           </h2>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="grid lg:grid-cols-2 gap-16 items-center px-0 mx-[15px] my-0 py-0">
           <div className="space-y-6 md:space-y-8">
             <div className="text-center p-8 rounded-xl bg-card border border-border shadow-sm hover:shadow-md transition-shadow">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
