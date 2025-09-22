@@ -199,4 +199,22 @@
   .column-highlight {
     @apply bg-accent/20 transition-all duration-300;
   }
+
+  /* Theme text tokens for better contrast */
+  :root {
+    --txt-strong: #E5E7EB;   /* slate-200 for dark mode */
+    --txt-default: #CBD5E1;  /* slate-300 for dark mode */
+    --txt-muted: #94A3B8;    /* slate-400 for dark mode */
+  }
+  
+  .light-mode {
+    --txt-strong: #0F172A;   /* slate-900 for light mode */
+    --txt-default: #1F2937;  /* slate-800 for light mode */
+    --txt-muted: #475569;    /* slate-600 for light mode */
+  }
+  
+  /* Text utility classes */
+  .text-strong { color: var(--txt-strong); }
+  .text-default { color: var(--txt-default); }
+  .text-muted { color: var(--txt-muted); }
 }

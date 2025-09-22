@@ -51,7 +51,7 @@ const Testimonials = () => {
               className="p-6 rounded-xl border border-border bg-background/80 backdrop-blur-sm hover:border-border/60 transition-all duration-300"
             >
               <div className="mb-4">
-                <h3 className="text-lg/7 font-semibold text-slate-100 light-mode:text-slate-900">{testimonial.title}</h3>
+                <h3 className="text-lg/7 font-semibold text-strong">{testimonial.title}</h3>
               </div>
               
               <div className="mb-4">
