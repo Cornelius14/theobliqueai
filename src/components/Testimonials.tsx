@@ -5,7 +5,7 @@ const Testimonials = () => {
   const testimonials = [
     {
       emoji: "🏘️",
-      title: "The Solaire Collection",
+      title: "🏡 The Solaire Collection",
       metric: "Same-day qualified calls booked",
       quote: "Identified luxury homeowners in legal STR markets. Outreach confirmed interest and pricing. Same-day qualified calls booked.",
       author: "The Solaire Collection",
@@ -14,7 +14,7 @@ const Testimonials = () => {
     },
     {
       emoji: "🏭", 
-      title: "Southeast Industrial (anonymized)",
+      title: "🏭 Southeast Industrial",
       metric: "612 warehouses → 6 at target price in ~58 minutes",
       quote: "612 warehouses identified in Nashville; 487 contactable; 121 live connects; 6 at target price. First live call in ~58 minutes.",
       author: "Southeast Industrial",
@@ -23,7 +23,7 @@ const Testimonials = () => {
     },
     {
       emoji: "🏢",
-      title: "Hudson Walk-Ups (anonymized)", 
+      title: "🏢 Hudson Walk-Ups", 
       metric: "1,940 units → 9 under diligence in 14 days",
       quote: "1,940 small multifamily units; 76 qualified sellers; 9 under diligence within 14 days.",
       author: "Hudson Walk-Ups Group",
@@ -55,7 +55,7 @@ const Testimonials = () => {
             >
               <div className="flex items-center gap-3 mb-4">
                 {testimonial.emoji && <span className="text-2xl">{testimonial.emoji}</span>}
-                <h3 className="font-medium text-foreground text-sm leading-tight">{testimonial.title}</h3>
+                <h3 className="text-lg/7 font-semibold text-slate-100 light-mode:text-slate-900">{testimonial.title}</h3>
               </div>
               
               <div className="mb-4">

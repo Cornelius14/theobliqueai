@@ -1,6 +1,6 @@
 import React from 'react';
 const HowItWorks = () => {
-  return <section id="how" className="w-full py-20 px-6 md:px-12 bg-background">
+  return <section id="how" className="w-full py-20 lg:py-24 px-6 md:px-12 bg-background">
       <div className="max-w-7xl mx-auto">
         <div className="text-center space-y-4 max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tighter text-foreground">
@@ -8,82 +8,64 @@ const HowItWorks = () => {
           </h2>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-12 items-start">
-          {/* Visual Progress Chart */}
-          <div className="space-y-6">
-            {/* Step Cards */}
-            <div className="space-y-4">
-              {/* Step 1 */}
-              <div className="flex items-start gap-4 p-6 rounded-lg bg-card border border-border transition-all hover:shadow-md">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                  1
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Tell Us What You're Looking For</h3>
-                  <div className="w-full bg-muted rounded-full h-1.5">
-                    <div className="bg-primary h-1.5 rounded-full w-full"></div>
-                  </div>
-                </div>
+        <div className="grid lg:grid-cols-2 gap-16 items-start">
+          {/* Step Rail */}
+          <ol className="relative space-y-10 before:absolute before:left-5 before:top-0 before:bottom-0 before:w-px before:bg-white/10 light-mode:before:bg-black/10">
+            {/* Step 1 */}
+            <li className="relative pl-14">
+              <span className="absolute left-0 top-0 h-10 w-10 rounded-full bg-white/6 ring-1 ring-white/15 light-mode:bg-black/5 light-mode:ring-black/15 flex items-center justify-center">
+                <svg className="h-5 w-5 text-slate-200 light-mode:text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </span>
+              <h3 className="text-base/6 font-medium text-slate-100 light-mode:text-slate-900">Tell Us What You're Looking For</h3>
+              <div className="mt-2 h-1.5 w-44 rounded-full bg-white/10 light-mode:bg-black/10">
+                <div className="h-1.5 w-2/3 rounded-full bg-white/60 light-mode:bg-black/60"></div>
               </div>
-
-              {/* Arrow */}
-              <div className="flex justify-center">
-                <div className="w-px h-6 bg-border"></div>
+            </li>
+            
+            {/* Step 2 */}
+            <li className="relative pl-14">
+              <span className="absolute left-0 top-0 h-10 w-10 rounded-full bg-white/6 ring-1 ring-white/15 light-mode:bg-black/5 light-mode:ring-black/15 flex items-center justify-center">
+                <svg className="h-5 w-5 text-slate-200 light-mode:text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                </svg>
+              </span>
+              <h3 className="text-base/6 font-medium text-slate-100 light-mode:text-slate-900">AI Sources Prospects</h3>
+              <div className="mt-2 h-1.5 w-44 rounded-full bg-white/10 light-mode:bg-black/10">
+                <div className="h-1.5 w-2/3 rounded-full bg-white/60 light-mode:bg-black/60"></div>
               </div>
-
-              {/* Step 2 */}
-              <div className="flex items-start gap-4 p-6 rounded-lg bg-card border border-border transition-all hover:shadow-md">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                  2
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-foreground mb-2">AI Sources Prospects</h3>
-                  <div className="w-full bg-muted rounded-full h-1.5">
-                    <div className="bg-primary h-1.5 rounded-full w-full"></div>
-                  </div>
-                </div>
+            </li>
+            
+            {/* Step 3 */}
+            <li className="relative pl-14">
+              <span className="absolute left-0 top-0 h-10 w-10 rounded-full bg-white/6 ring-1 ring-white/15 light-mode:bg-black/5 light-mode:ring-black/15 flex items-center justify-center">
+                <svg className="h-5 w-5 text-slate-200 light-mode:text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </span>
+              <h3 className="text-base/6 font-medium text-slate-100 light-mode:text-slate-900">Multi-Channel Outreach</h3>
+              <div className="mt-2 h-1.5 w-44 rounded-full bg-white/10 light-mode:bg-black/10">
+                <div className="h-1.5 w-2/3 rounded-full bg-white/60 light-mode:bg-black/60"></div>
               </div>
-
-              {/* Arrow */}
-              <div className="flex justify-center">
-                <div className="w-px h-6 bg-border"></div>
+            </li>
+            
+            {/* Step 4 */}
+            <li className="relative pl-14">
+              <span className="absolute left-0 top-0 h-10 w-10 rounded-full bg-white/6 ring-1 ring-white/15 light-mode:bg-black/5 light-mode:ring-black/15 flex items-center justify-center">
+                <svg className="h-5 w-5 text-slate-200 light-mode:text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </span>
+              <h3 className="text-base/6 font-medium text-slate-100 light-mode:text-slate-900">Qualified Meetings Booked</h3>
+              <div className="mt-2 h-1.5 w-44 rounded-full bg-white/10 light-mode:bg-black/10">
+                <div className="h-1.5 w-2/3 rounded-full bg-white/60 light-mode:bg-black/60"></div>
               </div>
-
-              {/* Step 3 */}
-              <div className="flex items-start gap-4 p-6 rounded-lg bg-card border border-border transition-all hover:shadow-md">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                  3
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Multi-Channel Outreach</h3>
-                  <div className="w-full bg-muted rounded-full h-1.5">
-                    <div className="bg-primary h-1.5 rounded-full w-full"></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Arrow */}
-              <div className="flex justify-center">
-                <div className="w-px h-6 bg-border"></div>
-              </div>
-
-              {/* Step 4 */}
-              <div className="flex items-start gap-4 p-6 rounded-lg bg-card border border-border transition-all hover:shadow-md">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                  4
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Qualified Meetings Booked</h3>
-                  <div className="w-full bg-muted rounded-full h-1.5">
-                    <div className="bg-primary h-1.5 rounded-full w-full"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+            </li>
+          </ol>
 
           {/* Right column with details */}
-          <div className="space-y-6">
+          <div className="space-y-6 md:space-y-8">
             <div className="p-6 rounded-lg bg-card border border-border">
               <h3 className="font-medium text-foreground mb-4">Share the exact type of lead you need.</h3>
               <p className="text-sm text-muted-foreground">
