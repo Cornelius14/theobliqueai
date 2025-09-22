@@ -7,33 +7,33 @@
 
 @layer base {
   :root {
-    --background: 0 0% 8%; /* Dark charcoal */
-    --foreground: 0 0% 95%; /* Light grey/white */
+    --background: 0 0% 6%; /* Darker background */
+    --foreground: 210 20% 85%; /* Softer slate-200 */
 
-    --card: 0 0% 12%; /* Slightly lighter charcoal */
-    --card-foreground: 0 0% 95%;
+    --card: 0 0% 9%; /* Slightly lighter */
+    --card-foreground: 210 20% 85%;
 
-    --popover: 0 0% 12%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 210 20% 85%;
 
-    --primary: 0 0% 85%; /* Light grey */
-    --primary-foreground: 0 0% 15%; /* Dark charcoal */
+    --primary: 210 20% 95%; /* Softer slate-100 */
+    --primary-foreground: 0 0% 10%; /* Dark background */
 
-    --secondary: 0 0% 18%; /* Medium charcoal */
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 0 0% 15%; /* Medium charcoal */
+    --secondary-foreground: 210 20% 85%;
 
-    --muted: 0 0% 22%; /* Lighter charcoal */
-    --muted-foreground: 0 0% 70%; /* Medium grey */
+    --muted: 0 0% 18%; /* Subtle muted */
+    --muted-foreground: 210 10% 60%; /* Softer slate-400 */
 
-    --accent: 0 0% 85%; /* Light grey accent */
-    --accent-foreground: 0 0% 15%;
+    --accent: 210 20% 95%; /* Light accent */
+    --accent-foreground: 0 0% 10%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 22%; /* Medium charcoal border */
-    --input: 0 0% 22%;
-    --ring: 0 0% 85%; /* Light grey ring */
+    --border: 0 0% 18%; /* Subtle border */
+    --input: 0 0% 18%;
+    --ring: 210 20% 95%; /* Light ring */
 
     --radius: 0.5rem;
   }
@@ -108,8 +108,8 @@
 
   .cosmic-grid {
     background-image: 
-      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 30px 30px;
   }
 

@@ -51,14 +51,24 @@ const Header = () => {
     
     // Handle special routes
     if (page === 'features') {
-      window.location.href = '/features';
+      // Check if we're on the home page
+      if (window.location.pathname === '/') {
+        window.location.href = '/features';
+      } else {
+        window.location.href = '/features';
+      }
       return;
     }
     
-    // Handle anchor links
-    const element = document.getElementById(page);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    // Handle anchor links - check if we're on home page
+    if (window.location.pathname === '/') {
+      const element = document.getElementById(page);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // Navigate to home page with hash
+      window.location.href = `/#${page}`;
     }
     setMobileMenuOpen(false);
   };

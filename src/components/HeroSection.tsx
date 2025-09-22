@@ -84,7 +84,7 @@ const HeroSection = () => {
         </div>
         
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-medium tracking-tighter text-balance text-foreground">
-          Type your mandate; we book qualified meetings—fast
+          Type your criteria; we deliver qualified real-estate targets—fast.
         </h1>
         
         {/* Typewriter Demo Card */}
@@ -106,7 +106,7 @@ const HeroSection = () => {
         </div>
         
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
-          Type your criteria. Oblique AI finds the right owners, buyers, borrowers, projects and spaces, reaches them on every channel, and delivers only the ones ready to deal.
+          Type your criteria. Oblique AI finds the right owners, buyers and borrowers, reaches them on every channel, and delivers only the ones ready to deal.
         </p>
         
         <div className="flex justify-center pt-6">
@@ -133,7 +133,7 @@ const HeroSection = () => {
                 <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center">
                   <div className="h-3 w-3 rounded-sm bg-foreground"></div>
                 </div>
-                <span className="text-foreground font-medium">Real Estate Acquisition Pipeline</span>
+                <span className="text-foreground font-medium">Real Estate Deal Pipeline</span>
               </div>
               
               <div className="flex items-center gap-3">

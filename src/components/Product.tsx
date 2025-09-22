@@ -5,9 +5,9 @@ const Product = () => {
     <section id="product" className="w-full py-20 px-6 md:px-12 bg-background">
       <div className="max-w-7xl mx-auto">
         <div className="text-center space-y-4 max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tighter text-foreground">
-            Prospecting → Qualified → Meetings booked
-          </h2>
+        <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tighter text-foreground">
+          Prospects → Qualified Targets → Meetings Booked
+        </h2>
         </div>
 
         <div className="grid md:grid-cols-2 gap-12 items-start">
@@ -16,13 +16,13 @@ const Product = () => {
             {/* Pipeline Visual */}
             <div className="space-y-4">
               <div className="relative">
-                {/* Row 1: Prospected */}
+                {/* Row 1: Prospects */}
                 <div className="flex items-center gap-4 p-4 rounded-lg bg-card border border-border">
                   <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
                     <div className="w-6 h-6 rounded-full bg-primary"></div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-medium text-foreground">Prospected</h3>
+                    <h3 className="text-lg font-medium text-foreground">Prospects</h3>
                     <div className="w-full bg-muted rounded-full h-2 mt-2">
                       <div className="bg-primary h-2 rounded-full" style={{ width: '85%' }}></div>
                     </div>
@@ -40,13 +40,13 @@ const Product = () => {
                   </svg>
                 </div>
 
-                {/* Row 2: Qualified Target */}
+                {/* Row 2: Qualified Targets */}
                 <div className="flex items-center gap-4 p-4 rounded-lg bg-card border border-border">
                   <div className="flex-shrink-0 w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
                     <div className="w-6 h-6 rounded-full bg-accent"></div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-medium text-foreground">Qualified Target</h3>
+                    <h3 className="text-lg font-medium text-foreground">Qualified Targets</h3>
                     <div className="w-full bg-muted rounded-full h-2 mt-2">
                       <div className="bg-accent h-2 rounded-full" style={{ width: '60%' }}></div>
                     </div>
@@ -64,13 +64,13 @@ const Product = () => {
                   </svg>
                 </div>
 
-                {/* Row 3: Meeting Booked */}
+                {/* Row 3: Meetings Booked */}
                 <div className="flex items-center gap-4 p-4 rounded-lg bg-card border border-border">
                   <div className="flex-shrink-0 w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center">
                     <div className="w-6 h-6 rounded-full bg-secondary"></div>
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-medium text-foreground">Meeting Booked</h3>
+                    <h3 className="text-lg font-medium text-foreground">Meetings Booked</h3>
                     <div className="w-full bg-muted rounded-full h-2 mt-2">
                       <div className="bg-secondary h-2 rounded-full" style={{ width: '35%' }}></div>
                     </div>
@@ -84,7 +84,7 @@ const Product = () => {
             </div>
 
             <p className="text-muted-foreground text-center">
-              Move deals through Prospecting → Qualified → Meetings booked with coordinated email, SMS, voicemail, and live calls.
+              Move deals through Prospects → Qualified Targets → Meetings Booked with coordinated email, SMS, voicemail, and live calls.
             </p>
           </div>
 
