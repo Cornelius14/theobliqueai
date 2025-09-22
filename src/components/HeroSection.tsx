@@ -2,23 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import TaskBoard from './TaskBoard';
 import { Loader } from 'lucide-react';
-
 const TypewriterAnimation = () => {
   const [displayText, setDisplayText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTyping, setIsTyping] = useState(true);
   const [currentQuery, setCurrentQuery] = useState(0);
-
-  const queries = [
-    "Find value-add multifamily, 20–40 units, in Charlotte, built 1980–2005, cap ≥ 6.5%, ≤ $180k/door.",
-    "Find 18–22k SF retail for lease in Miami Beach, $180–$220 PSF, frontage ≥ 60 ft.",
-    "Find Dallas multifamily owners with loans maturing in 3–6 months, 50–150 units, LTV ≥ 65% for refinance.",
-    "Find Travis County, TX properties with recent deed filings/escrow opens likely to need title insurance in ≤45 days."
-  ];
-
+  const queries = ["Find value-add multifamily, 20–40 units, in Charlotte, built 1980–2005, cap ≥ 6.5%, ≤ $180k/door.", "Find 18–22k SF retail for lease in Miami Beach, $180–$220 PSF, frontage ≥ 60 ft.", "Find Dallas multifamily owners with loans maturing in 3–6 months, 50–150 units, LTV ≥ 65% for refinance.", "Find Travis County, TX properties with recent deed filings/escrow opens likely to need title insurance in ≤45 days."];
   useEffect(() => {
     const currentText = queries[currentQuery];
-    
     if (isTyping) {
       if (currentIndex < currentText.length) {
         const timeout = setTimeout(() => {
@@ -41,22 +32,19 @@ const TypewriterAnimation = () => {
         return () => clearTimeout(timeout);
       } else {
         const timeout = setTimeout(() => {
-          setCurrentQuery((prev) => (prev + 1) % queries.length);
+          setCurrentQuery(prev => (prev + 1) % queries.length);
           setIsTyping(true);
         }, 500);
         return () => clearTimeout(timeout);
       }
     }
   }, [currentIndex, isTyping, currentQuery, queries]);
-
-  return (
-    <div className="relative">
+  return <div className="relative">
       <div className="whitespace-pre-line">
         {displayText}
         <span className="animate-pulse">|</span>
       </div>
-    </div>
-  );
+    </div>;
 };
 const HeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -98,8 +86,7 @@ const HeroSection = () => {
 
           {/* Static "Run query" button purely for look */}
           <div className="mt-3">
-          <button type="button" disabled aria-disabled="true"
-            className="rounded-xl px-4 py-2 font-medium border shadow-sm disabled:opacity-50 text-foreground">
+          <button type="button" disabled aria-disabled="true" className="rounded-xl px-4 py-2 font-medium border shadow-sm disabled:opacity-50 text-foreground">
             find qualified targets
           </button>
           </div>
@@ -110,17 +97,12 @@ const HeroSection = () => {
         </p>
         
         <div className="flex justify-center pt-6">
-          <Button 
-            onClick={() => window.location.href = '/book'}
-            className="bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground text-base h-12 px-8 transition-all duration-200 min-h-[48px]"
-          >
+          <Button onClick={() => window.location.href = '/book'} className="bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground text-base h-12 px-8 transition-all duration-200 min-h-[48px]">
             Get a 30-minute demo
           </Button>
         </div>
         
-        <div className="pt-6 text-sm text-muted-foreground">
-          Teams & Enterprise only — pricing discussed on a call
-        </div>
+        
       </div>
       
       {/* Task Manager UI integrated in hero section with glassmorphic effect */}
@@ -159,20 +141,18 @@ const HeroSection = () => {
                   <div className="space-y-1">
                     <div className="flex items-center gap-3 px-3 py-2 rounded-md bg-muted text-foreground">
                       <div className="h-3 w-3 rounded-sm bg-foreground"></div>
-                      <span>Outreach</span>
+                      <span className="text-lg">Prospecting
+                    </span>
                     </div>
                     <div className="flex items-center gap-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-muted/50">
                       <div className="h-3 w-3 rounded-sm bg-muted-foreground/30"></div>
-                      <span>Qualification</span>
+                      <span>Qualified Targets</span>
                     </div>
                     <div className="flex items-center gap-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-muted/50">
                       <div className="h-3 w-3 rounded-sm bg-muted-foreground/30"></div>
-                      <span>Due Diligence</span>
+                      <span>Meetings Booked</span>
                     </div>
-                    <div className="flex items-center gap-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-muted/50">
-                      <div className="h-3 w-3 rounded-sm bg-muted-foreground/30"></div>
-                      <span>Analytics</span>
-                    </div>
+                    
                   </div>
                 </div>
                 
