@@ -10,88 +10,72 @@ const HowItWorks = () => {
 
         <div className="grid md:grid-cols-2 gap-12 items-start">
           {/* Visual Progress Chart */}
-          <div className="space-y-8">
-            {/* Step Progress Visual */}
+          <div className="space-y-6">
+            {/* Step Cards */}
             <div className="space-y-4">
-              <div className="relative">
-                {/* Step 1 */}
-                <div className="flex items-center gap-4 p-4 rounded-lg bg-card border border-border">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                    <span className="text-lg font-bold text-primary">1</span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-foreground">Tell Us What You're Looking For</h3>
-                    <div className="w-full bg-muted rounded-full h-2 mt-2">
-                      <div style={{
-                      width: '100%'
-                    }} className="bg-primary h-2 rounded-full"></div>
-                    </div>
+              {/* Step 1 */}
+              <div className="flex items-start gap-4 p-6 rounded-lg bg-card border border-border transition-all hover:shadow-md">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                  1
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Tell Us What You're Looking For</h3>
+                  <div className="w-full bg-muted rounded-full h-1.5">
+                    <div className="bg-primary h-1.5 rounded-full w-full"></div>
                   </div>
                 </div>
+              </div>
 
-                {/* Arrow */}
-                <div className="flex justify-center my-2">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-primary">
-                    <path d="M12 5v14m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+              {/* Arrow */}
+              <div className="flex justify-center">
+                <div className="w-px h-6 bg-border"></div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex items-start gap-4 p-6 rounded-lg bg-card border border-border transition-all hover:shadow-md">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                  2
                 </div>
-
-                {/* Step 2 */}
-                <div className="flex items-center gap-4 p-4 rounded-lg bg-card border border-border">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
-                    <span className="text-lg font-bold text-accent">2</span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-foreground">Unlock Thousands of Prospects</h3>
-                    <div className="w-full bg-muted rounded-full h-2 mt-2">
-                      <div className="bg-accent h-2 rounded-full" style={{
-                      width: '75%'
-                    }}></div>
-                    </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">AI Sources Prospects</h3>
+                  <div className="w-full bg-muted rounded-full h-1.5">
+                    <div className="bg-primary h-1.5 rounded-full w-full"></div>
                   </div>
                 </div>
+              </div>
 
-                {/* Arrow */}
-                <div className="flex justify-center my-2">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-primary">
-                    <path d="M12 5v14m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+              {/* Arrow */}
+              <div className="flex justify-center">
+                <div className="w-px h-6 bg-border"></div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex items-start gap-4 p-6 rounded-lg bg-card border border-border transition-all hover:shadow-md">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                  3
                 </div>
-
-                {/* Step 3 */}
-                <div className="flex items-center gap-4 p-4 rounded-lg bg-card border border-border">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center">
-                    <span className="text-lg font-bold text-secondary">3</span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-foreground">Let AI Do the Outreach</h3>
-                    <div className="w-full bg-muted rounded-full h-2 mt-2">
-                      <div className="bg-secondary h-2 rounded-full" style={{
-                      width: '50%'
-                    }}></div>
-                    </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Multi-Channel Outreach</h3>
+                  <div className="w-full bg-muted rounded-full h-1.5">
+                    <div className="bg-primary h-1.5 rounded-full w-full"></div>
                   </div>
                 </div>
+              </div>
 
-                {/* Arrow */}
-                <div className="flex justify-center my-2">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-primary">
-                    <path d="M12 5v14m0 0l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+              {/* Arrow */}
+              <div className="flex justify-center">
+                <div className="w-px h-6 bg-border"></div>
+              </div>
+
+              {/* Step 4 */}
+              <div className="flex items-start gap-4 p-6 rounded-lg bg-card border border-border transition-all hover:shadow-md">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                  4
                 </div>
-
-                {/* Step 4 */}
-                <div className="flex items-center gap-4 p-4 rounded-lg bg-card border border-border">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                    <span className="text-lg font-bold text-primary">4</span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-foreground">Watch Your Calendar Fill Up</h3>
-                    <div className="w-full bg-muted rounded-full h-2 mt-2">
-                      <div className="bg-primary h-2 rounded-full" style={{
-                      width: '25%'
-                    }}></div>
-                    </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Qualified Meetings Booked</h3>
+                  <div className="w-full bg-muted rounded-full h-1.5">
+                    <div className="bg-primary h-1.5 rounded-full w-full"></div>
                   </div>
                 </div>
               </div>
