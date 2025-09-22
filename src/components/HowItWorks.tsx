@@ -17,7 +17,7 @@ const HowItWorks = () => {
                 </svg>
               </div>
               <div>
-                <span className="inline-flex items-center justify-center w-6 h-6 bg-primary text-primary-foreground rounded-full text-sm font-medium mb-2">1</span>
+                
                 <h3 className="font-medium text-foreground how-title">Tell Us What You're Looking For</h3>
               </div>
             </div>
