@@ -217,4 +217,18 @@
   .text-strong { color: var(--txt-strong); }
   .text-default { color: var(--txt-default); }
   .text-muted { color: var(--txt-muted); }
+
+  /* How it Works section specific styling */
+  :root[data-theme="dark"] #how .how-title { 
+    color: #E5E7EB !important; 
+  }
+  :root[data-theme="light"] #how .how-title { 
+    color: #0F172A !important; 
+  }
+
+  /* Neutralize parent color inheritance */
+  :root[data-theme="light"] #how .left-rail, 
+  :root[data-theme="dark"] #how .left-rail { 
+    color: inherit !important; 
+  }
 }
