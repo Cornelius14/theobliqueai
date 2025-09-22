@@ -4,23 +4,21 @@ import logoDark from '@/assets/oblique-logo-dark.svg';
 
 const Logo = () => {
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="h-9 w-9 rounded-md bg-white/6 ring-1 ring-white/10 light-mode:bg-black/5 light-mode:ring-black/10 flex items-center justify-center text-slate-200 light-mode:text-slate-800">
-        {/* Light mode logo */}
+    <>
+      <span className="h-9 w-9 rounded-md flex items-center justify-center ring-1 bg-white/10 ring-white/15 text-slate-100 light-mode:bg-black/10 light-mode:ring-black/15 light-mode:text-slate-900">
         <img 
           src={logoLight} 
-          alt="Oblique AI Logo" 
-          className="h-6 w-6 dark:hidden block" 
+          alt="Oblique AI" 
+          className="h-6 w-6" 
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block';
+          }}
         />
-        {/* Dark mode logo */}
-        <img 
-          src={logoDark} 
-          alt="Oblique AI Logo" 
-          className="h-6 w-6 hidden dark:block" 
-        />
-      </div>
-      <span className="text-xl font-medium text-foreground">Oblique AI</span>
-    </div>
+        <span className="text-sm font-bold hidden">OA</span>
+      </span>
+      <span className="text-slate-200 text-xl font-semibold tracking-tight light-mode:text-slate-900">Oblique AI</span>
+    </>
   );
 };
 export default Logo;

@@ -4,7 +4,6 @@ import React from 'react';
 const Testimonials = () => {
   const testimonials = [
     {
-      emoji: "🏘️",
       title: "🏡 The Solaire Collection",
       metric: "Same-day qualified calls booked",
       quote: "Identified luxury homeowners in legal STR markets. Outreach confirmed interest and pricing. Same-day qualified calls booked.",
@@ -13,7 +12,6 @@ const Testimonials = () => {
       avatar: "bg-muted"
     },
     {
-      emoji: "🏭", 
       title: "🏭 Southeast Industrial",
       metric: "612 warehouses → 6 at target price in ~58 minutes",
       quote: "612 warehouses identified in Nashville; 487 contactable; 121 live connects; 6 at target price. First live call in ~58 minutes.",
@@ -22,7 +20,6 @@ const Testimonials = () => {
       avatar: "bg-muted"
     },
     {
-      emoji: "🏢",
       title: "🏢 Hudson Walk-Ups", 
       metric: "1,940 units → 9 under diligence in 14 days",
       quote: "1,940 small multifamily units; 76 qualified sellers; 9 under diligence within 14 days.",
@@ -53,8 +50,7 @@ const Testimonials = () => {
               key={index}
               className="p-6 rounded-xl border border-border bg-background/80 backdrop-blur-sm hover:border-border/60 transition-all duration-300"
             >
-              <div className="flex items-center gap-3 mb-4">
-                {testimonial.emoji && <span className="text-2xl">{testimonial.emoji}</span>}
+              <div className="mb-4">
                 <h3 className="text-lg/7 font-semibold text-slate-100 light-mode:text-slate-900">{testimonial.title}</h3>
               </div>
               
