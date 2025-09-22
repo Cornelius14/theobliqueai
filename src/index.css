@@ -39,30 +39,30 @@
   }
 
   .light-mode {
-    --background: 0 0% 95%; /* Light background */
-    --foreground: 0 0% 5%; /* Much darker text for strong contrast */
+    --background: 0 0% 98%; /* White background */
+    --foreground: 0 0% 9%; /* Almost black text */
 
-    --card: 0 0% 98%; /* Very light card background */
-    --card-foreground: 0 0% 5%; /* Dark text on cards */
+    --card: 0 0% 100%; /* Pure white cards */
+    --card-foreground: 0 0% 9%; /* Almost black text on cards */
 
-    --popover: 0 0% 98%;
-    --popover-foreground: 0 0% 5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
 
-    --primary: 0 0% 10%; /* Dark primary for strong contrast */
+    --primary: 0 0% 9%; /* Almost black primary */
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 0 0% 90%; /* Light secondary */
-    --secondary-foreground: 0 0% 5%; /* Dark text */
+    --secondary: 0 0% 96%; /* Light grey secondary */
+    --secondary-foreground: 0 0% 9%; /* Almost black text */
 
-    --muted: 0 0% 85%; /* Muted background */
-    --muted-foreground: 0 0% 25%; /* Much darker muted text */
+    --muted: 0 0% 96%; /* Light grey muted */
+    --muted-foreground: 0 0% 45%; /* Medium grey muted text */
 
-    --accent: 0 0% 10%; /* Dark accent */
+    --accent: 0 0% 9%; /* Almost black accent */
     --accent-foreground: 0 0% 98%;
 
-    --border: 0 0% 75%; /* Visible border */
-    --input: 0 0% 90%;
-    --ring: 0 0% 10%; /* Dark ring */
+    --border: 0 0% 89%; /* Light grey border */
+    --input: 0 0% 96%;
+    --ring: 0 0% 9%; /* Almost black ring */
   }
 
   * {
