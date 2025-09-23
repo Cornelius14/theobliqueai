@@ -451,11 +451,32 @@ const Demo = () => {
     return prospects;
   };
 
-  const handleParse = () => {
-    if (criteria.trim()) {
-      const parsed = parseCriteria(criteria);
-      setParsedData(parsed);
+  const handleParse = async () => {
+    if (!criteria.trim()) return;
+
+    try {
+      // Try LLM endpoint first
+      const response = await fetch('/api/parseBuyBox', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: criteria })
+      });
+
+      if (response.ok) {
+        const llmResult = await response.json();
+        // Validate the result has required structure
+        if (llmResult && typeof llmResult.coverage === 'number') {
+          setParsedData(llmResult);
+          return;
+        }
+      }
+    } catch (error) {
+      console.log('LLM endpoint unavailable, using local parser');
     }
+
+    // Fallback to local parser
+    const parsed = parseCriteria(criteria);
+    setParsedData(parsed);
   };
 
   const handleSendToCRM = () => {
@@ -537,27 +558,54 @@ const Demo = () => {
   const qualRate = prospects.length > 0 ? Math.round((qualified.length / (prospects.length + qualified.length + meetings.length)) * 100) : 0;
   const bookRate = qualified.length > 0 ? Math.round((meetings.length / (qualified.length + meetings.length)) * 100) : 0;
 
-  // Render prospect cards with consistent design
-  const renderProspectCard = (prospect: Prospect, onQualify?: () => void, onBook?: () => void, onRemove?: () => void) => (
-    <Card key={prospect.id} className="rounded-xl ring-1 ring-border p-4">
-      <div className="space-y-2">
-        {/* Title */}
+  // Asset type emojis
+  const getAssetTypeEmoji = (assetType: string) => {
+    switch (assetType) {
+      case 'industrial':
+      case 'warehouse':
+        return '🏭';
+      case 'multifamily':
+        return '🏘️';
+      case 'retail':
+        return '🏬';
+      case 'single-family':
+        return '🏠';
+      case 'data center':
+        return '🏢';
+      case 'land':
+        return '🏞️';
+      default:
+        return '🏢';
+    }
+  };
+
+  // Render prospect cards with consistent design and emojis
+  const renderProspectCard = (prospect: Prospect, onQualify?: () => void, onBook?: () => void, onRemove?: () => void) => {
+    const emoji = getAssetTypeEmoji(prospect.asset_type);
+    const assetLabel = prospect.asset_type === 'warehouse' ? 'Industrial' : 
+                      prospect.asset_type.split('-').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                      ).join(' ');
+    
+    return (
+      <Card key={prospect.id} className="rounded-xl ring-1 ring-border/50 p-4 space-y-2 bg-card/50 backdrop-blur-sm hover:bg-card/70 transition-colors">
+        {/* Title with emoji */}
         <h4 className="font-medium text-sm leading-tight">
-          {prospect.name} ({prospect.market_city}, {prospect.market_state})
+          {emoji} {assetLabel} — {prospect.size_sf ? `${(prospect.size_sf / 1000).toFixed(0)}k SF` : `${prospect.units} units`} ({prospect.market_city}, {prospect.market_state})
         </h4>
         
         {/* Outreach chips */}
         <div className="flex gap-1">
-          <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.email === 'reached' ? 'bg-green-600/10 text-green-600' : 'bg-red-600/10 text-red-600'}`}>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.email === 'reached' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
             email
           </span>
-          <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.sms === 'reached' ? 'bg-green-600/10 text-green-600' : 'bg-red-600/10 text-red-600'}`}>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.sms === 'reached' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
             sms
           </span>
-          <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.call === 'reached' ? 'bg-green-600/10 text-green-600' : 'bg-red-600/10 text-red-600'}`}>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.call === 'reached' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
             call
           </span>
-          <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.vm === 'left' ? 'bg-muted text-muted-foreground' : 'bg-red-600/10 text-red-600'}`}>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.vm === 'left' ? 'bg-muted/50 text-muted-foreground' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
             vm
           </span>
         </div>
@@ -575,7 +623,7 @@ const Demo = () => {
         {prospect.flags.length > 0 && (
           <div className="flex gap-1 flex-wrap">
             {prospect.flags.map((flag, index) => (
-              <Badge key={index} variant="outline" className="text-xs px-1.5 py-0.5">
+              <Badge key={index} variant="outline" className="text-xs px-2 py-0.5 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300">
                 {flag}
               </Badge>
             ))}
@@ -583,29 +631,29 @@ const Demo = () => {
         )}
         
         {/* Contact */}
-        <div className="text-xs text-muted-foreground font-mono">
+        <div className="text-xs text-muted-foreground font-mono bg-muted/30 px-2 py-1 rounded">
           {prospect.contact.email} · {prospect.contact.phone}
         </div>
         
         {/* Actions */}
         <div className="flex gap-2 pt-1">
           {onQualify && (
-            <Button size="sm" variant="outline" onClick={onQualify}>
+            <Button size="sm" variant="outline" onClick={onQualify} className="text-xs">
               Qualify
             </Button>
           )}
           {onBook && (
-            <Button size="sm" variant="outline" onClick={onBook}>
+            <Button size="sm" variant="outline" onClick={onBook} className="text-xs">
               Book
             </Button>
           )}
-          <Button size="sm" variant="ghost" onClick={onRemove}>
+          <Button size="sm" variant="ghost" onClick={onRemove} className="text-xs">
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
-      </div>
-    </Card>
-  );
+      </Card>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
