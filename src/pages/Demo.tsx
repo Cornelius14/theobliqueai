@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Menu, X, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { parseBuyBoxLocal } from '@/lib/localParser';
-import { parseWithLLM, normalizeParsed, type Parsed } from '@/lib/llmClient';
-import { coverageScore } from '@/lib/normalize';
+import { parseWithLLM, type Parsed } from '@/lib/llmClient';
+import { normalizeParsed, coverageScore } from '@/lib/normalize';
+import { quickExtract } from '@/lib/quickExtract';
 import { seedProspects } from '@/lib/seedCRM';
 
 // Using Prospect type from synth.ts instead of local interface
@@ -18,50 +19,72 @@ const Demo = () => {
   const [crmProspects, setCrmProspects] = useState<any[]>([]);
   const [qualifiedTargets, setQualifiedTargets] = useState<any[]>([]);
   const [meetingsBooked, setMeetingsBooked] = useState<any[]>([]);
-  const [statusChip, setStatusChip] = useState<'idle' | 'llm' | 'fallback' | 'error'>('idle');
-  const [showVerificationBar, setShowVerificationBar] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'llm' | 'fallback' | 'error'>('idle');
   const [coverage, setCoverage] = useState(0);
+  const [blocked, setBlocked] = useState(false);
+  const [verified, setVerified] = useState(false);
   const { toast } = useToast();
 
   const handleParse = async () => {
     if (!criteria.trim()) return;
 
-    setStatusChip('llm');
-    setShowVerificationBar(false);
+    setStatus('llm');
+    setVerified(false);
 
     try {
       const llmResult = await parseWithLLM(criteria);
       const parsed = normalizeParsed(llmResult);
-      setCoverage(coverageScore(parsed));
+      const cov = coverageScore(parsed);
+      const isBlocked = cov < 30 || !(parsed.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
+      
       setParsedBuyBox(parsed);
-      setStatusChip('idle');
-      setShowVerificationBar(true);
+      setCoverage(cov);
+      setBlocked(isBlocked);
+      setStatus('idle');
+      
+      // Set for QA inspection
+      (window as any).__parsed = parsed;
     } catch (error) {
       console.log('LLM parsing failed, using local parser:', error);
-      setStatusChip('fallback');
-      const localResult = parseBuyBoxLocal(criteria);
-      console.log('Local parser result:', localResult); // Debug log
-      const parsed = normalizeParsed(localResult);
-      console.log('Normalized parsed:', parsed); // Debug log
-      setParsedBuyBox(parsed);
-      setCoverage(coverageScore(parsed));
-      setShowVerificationBar(true);
+      setStatus('fallback');
       
-      // Clear fallback status after 3 seconds
-      setTimeout(() => setStatusChip('idle'), 3000);
+      try {
+        const localResult = parseBuyBoxLocal(criteria);
+        let parsed = normalizeParsed(localResult);
+        let cov = coverageScore(parsed);
+        
+        if (cov < 30) {
+          parsed = normalizeParsed(quickExtract(criteria));
+          cov = coverageScore(parsed);
+        }
+        
+        const isBlocked = cov < 30 || !(parsed.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
+        
+        setParsedBuyBox(parsed);
+        setCoverage(cov);
+        setBlocked(isBlocked);
+        
+        // Set for QA inspection
+        (window as any).__parsed = parsed;
+        
+        // Clear fallback status after 1.5 seconds
+        setTimeout(() => setStatus('idle'), 1500);
+      } catch (localError) {
+        console.error('All parsers failed:', localError);
+        setStatus('error');
+        setTimeout(() => setStatus('idle'), 3000);
+      }
     }
   };
 
   const handleProceed = () => {
-    if (!parsedBuyBox) return;
+    if (!parsedBuyBox || blocked) return;
 
     const newProspects = seedProspects(parsedBuyBox);
-    console.log('Generated prospects:', newProspects); // Debug log
     setCrmProspects(newProspects);
-    setShowVerificationBar(false);
-    
-    // Set for QA inspection
-    (window as any).__parsed = parsedBuyBox;
+    setQualifiedTargets([]); // Clear qualified targets
+    setMeetingsBooked([]); // Clear meetings
+    setVerified(true);
     
     toast({
       title: "Prospects added to CRM",
@@ -78,7 +101,7 @@ const Demo = () => {
   };
 
   const handleEdit = () => {
-    setShowVerificationBar(false);
+    setVerified(false);
     // Focus the textarea
     const textarea = document.querySelector('textarea');
     if (textarea) {
@@ -168,7 +191,7 @@ const Demo = () => {
           {prospect.title}
         </h4>
         
-        {/* Meta info - matchReason */}
+        {/* Match reason */}
         <div className="text-sm text-muted-foreground line-clamp-2">
           {prospect.matchReason}
         </div>
@@ -275,14 +298,23 @@ const Demo = () => {
               <Button onClick={handleParse} disabled={!criteria.trim()}>
                 Parse
               </Button>
-              {statusChip !== 'idle' && (
-                <Badge variant={statusChip === 'llm' ? 'default' : statusChip === 'fallback' ? 'secondary' : 'destructive'}>
-                  {statusChip === 'llm' && 'Parsing with LLM…'}
-                  {statusChip === 'fallback' && 'LLM unavailable → local parser'}
-                  {statusChip === 'error' && 'Parse error'}
+              {status !== 'idle' && (
+                <Badge variant={status === 'llm' ? 'default' : status === 'fallback' ? 'secondary' : 'destructive'}>
+                  {status === 'llm' && 'Parsing with LLM…'}
+                  {status === 'fallback' && 'LLM unavailable → local parser'}
+                  {status === 'error' && 'Parse error'}
                 </Badge>
               )}
-              <Button variant="outline" onClick={() => { setCriteria(''); setParsedBuyBox(null); setShowVerificationBar(false); setCrmProspects([]); setQualifiedTargets([]); setMeetingsBooked([]); }}>
+              <Button variant="outline" onClick={() => { 
+                setCriteria(''); 
+                setParsedBuyBox(null); 
+                setVerified(false); 
+                setCrmProspects([]); 
+                setQualifiedTargets([]); 
+                setMeetingsBooked([]); 
+                setBlocked(false);
+                setCoverage(0);
+              }}>
                 Reset
               </Button>
             </div>
@@ -315,16 +347,21 @@ const Demo = () => {
         </Card>
 
         {/* Verification Bar */}
-        {showVerificationBar && parsedBuyBox && (
-          <Card className="border-amber-200 bg-amber-50">
+        {parsedBuyBox && !verified && (
+          <Card className={`border-2 ${blocked ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20'}`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium text-sm mb-1">Did we understand this correctly?</h3>
-                  <p className="text-sm text-muted-foreground">{generateBuyBoxSummary(parsedBuyBox as any)}</p>
+                  <p className="text-sm text-muted-foreground mb-2">{generateBuyBoxSummary(parsedBuyBox as any)}</p>
+                  {blocked && (
+                    <p className="text-sm text-red-700 dark:text-red-300">
+                      Parsing incomplete — add a market or size (or adjust text), then parse again.
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-2 ml-4">
-                  <Button onClick={handleProceed} size="sm">
+                  <Button onClick={handleProceed} size="sm" disabled={blocked}>
                     Looks right → Proceed
                   </Button>
                   <Button onClick={handleEdit} variant="outline" size="sm">
