@@ -20,6 +20,7 @@ const Demo = () => {
   const [meetingsBooked, setMeetingsBooked] = useState<any[]>([]);
   const [statusChip, setStatusChip] = useState<'idle' | 'llm' | 'fallback' | 'error'>('idle');
   const [showVerificationBar, setShowVerificationBar] = useState(false);
+  const [coverage, setCoverage] = useState(0);
   const { toast } = useToast();
 
   const handleParse = async () => {
@@ -32,12 +33,16 @@ const Demo = () => {
       const llmResult = await parseWithLLM(criteria);
       const parsed = normalizeParsed(llmResult);
       setCoverage(coverageScore(parsed));
+      setParsedBuyBox(parsed);
+      setStatusChip('idle');
+      setShowVerificationBar(true);
     } catch (error) {
       console.log('LLM parsing failed, using local parser:', error);
       setStatusChip('fallback');
       const localResult = parseBuyBoxLocal(criteria);
       const parsed = normalizeParsed(localResult);
       setParsedBuyBox(parsed);
+      setCoverage(coverageScore(parsed));
       setShowVerificationBar(true);
       
       // Clear fallback status after 3 seconds
@@ -326,8 +331,8 @@ const Demo = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Parsed Buy-Box</CardTitle>
-              <Badge className={getCoverageColor(coverageScore(parsedBuyBox as any))}>
-                Coverage: {coverageScore(parsedBuyBox as any)}%
+              <Badge className={getCoverageColor(coverage)}>
+                Coverage: {coverage}%
               </Badge>
             </CardHeader>
             <CardContent>
@@ -361,7 +366,7 @@ const Demo = () => {
                 </div>
               </div>
               
-              {coverageScore(parsedBuyBox as any) < 60 && (
+              {coverage < 60 && (
                 <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                   <p className="text-sm text-amber-800 dark:text-amber-200">
                     Add market + size (or units) for accurate matches.

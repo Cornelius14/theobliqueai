@@ -1,4 +1,4 @@
-import { type Parsed } from './localParser';
+import type { Parsed } from './llmClient';
 
 interface Prospect {
   id: string;
