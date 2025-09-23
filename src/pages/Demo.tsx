@@ -40,7 +40,9 @@ const Demo = () => {
       console.log('LLM parsing failed, using local parser:', error);
       setStatusChip('fallback');
       const localResult = parseBuyBoxLocal(criteria);
+      console.log('Local parser result:', localResult); // Debug log
       const parsed = normalizeParsed(localResult);
+      console.log('Normalized parsed:', parsed); // Debug log
       setParsedBuyBox(parsed);
       setCoverage(coverageScore(parsed));
       setShowVerificationBar(true);
@@ -54,6 +56,7 @@ const Demo = () => {
     if (!parsedBuyBox) return;
 
     const newProspects = seedProspects(parsedBuyBox);
+    console.log('Generated prospects:', newProspects); // Debug log
     setCrmProspects(newProspects);
     setShowVerificationBar(false);
     
@@ -172,7 +175,7 @@ const Demo = () => {
         </div>
         
         {/* Flags */}
-        {prospect.badges.length > 0 && (
+        {prospect.badges && prospect.badges.length > 0 && (
           <div className="flex gap-1 flex-wrap">
             {prospect.badges.map((flag, index) => (
               <Badge key={index} variant="outline" className="text-xs px-2 py-0.5 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300">
@@ -184,23 +187,23 @@ const Demo = () => {
         
         {/* Outreach chips */}
         <div className="flex gap-1">
-          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.email === 'green' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach?.email === 'green' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
             email
           </span>
-          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.sms === 'green' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach?.sms === 'green' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
             sms
           </span>
-          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.call === 'green' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach?.call === 'green' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
             call
           </span>
-          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.vm === 'green' ? 'bg-muted/50 text-muted-foreground' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach?.vm === 'green' ? 'bg-muted/50 text-muted-foreground' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
             vm
           </span>
         </div>
         
         {/* Contact */}
         <div className="text-xs text-muted-foreground font-mono bg-muted/30 px-2 py-1 rounded">
-          {prospect.contact.email} · {prospect.contact.phone}
+          {prospect.contact?.email} · {prospect.contact?.phone}
         </div>
         
         {/* Actions */}
