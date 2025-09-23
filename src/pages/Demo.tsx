@@ -5,34 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Menu, X, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { parseBuyBoxLocal, coverageScore, type Parsed } from '@/lib/localParser';
-import { parseWithLLM, normalizeParsed } from '@/lib/llmClient';
+import { parseBuyBoxLocal } from '@/lib/localParser';
+import { parseWithLLM, normalizeParsed, type Parsed } from '@/lib/llmClient';
+import { coverageScore } from '@/lib/normalize';
 import { seedProspects } from '@/lib/seedCRM';
 
-interface Prospect {
-  id: string;
-  title: string;
-  size: string;
-  location: string;
-  price: string;
-  buildYear?: number;
-  contact: string;
-  outreach: {
-    email: 'reached' | 'no-answer';
-    sms: 'reached' | 'no-answer';
-    call: 'reached' | 'no-answer';
-    vm: 'left' | 'none';
-  };
-  flags: string[];
-  assetType: string;
-}
+// Using Prospect type from synth.ts instead of local interface
 
 const Demo = () => {
   const [criteria, setCriteria] = useState('');
   const [parsedBuyBox, setParsedBuyBox] = useState<Parsed | null>(null);
-  const [crmProspects, setCrmProspects] = useState<Prospect[]>([]);
-  const [qualifiedTargets, setQualifiedTargets] = useState<Prospect[]>([]);
-  const [meetingsBooked, setMeetingsBooked] = useState<Prospect[]>([]);
+  const [crmProspects, setCrmProspects] = useState<any[]>([]);
+  const [qualifiedTargets, setQualifiedTargets] = useState<any[]>([]);
+  const [meetingsBooked, setMeetingsBooked] = useState<any[]>([]);
   const [statusChip, setStatusChip] = useState<'idle' | 'llm' | 'fallback' | 'error'>('idle');
   const [showVerificationBar, setShowVerificationBar] = useState(false);
   const { toast } = useToast();
@@ -46,9 +31,7 @@ const Demo = () => {
     try {
       const llmResult = await parseWithLLM(criteria);
       const parsed = normalizeParsed(llmResult);
-      setParsedBuyBox(parsed);
-      setStatusChip('idle');
-      setShowVerificationBar(true);
+      setCoverage(coverageScore(parsed));
     } catch (error) {
       console.log('LLM parsing failed, using local parser:', error);
       setStatusChip('fallback');
@@ -68,6 +51,9 @@ const Demo = () => {
     const newProspects = seedProspects(parsedBuyBox);
     setCrmProspects(newProspects);
     setShowVerificationBar(false);
+    
+    // Set for QA inspection
+    (window as any).__parsed = parsedBuyBox;
     
     toast({
       title: "Prospects added to CRM",
@@ -140,7 +126,7 @@ const Demo = () => {
     return parts.join(', ') || 'Property search criteria';
   };
 
-  const moveProspect = (id: string, from: Prospect[], to: Prospect[], setFrom: (prospects: Prospect[]) => void, setTo: (prospects: Prospect[]) => void) => {
+  const moveProspect = (id: string, from: any[], to: any[], setFrom: (prospects: any[]) => void, setTo: (prospects: any[]) => void) => {
     const prospect = from.find(p => p.id === id);
     if (prospect) {
       setFrom(from.filter(p => p.id !== id));
@@ -148,7 +134,7 @@ const Demo = () => {
     }
   };
 
-  const removeProspect = (id: string, from: Prospect[], setFrom: (prospects: Prospect[]) => void) => {
+  const removeProspect = (id: string, from: any[], setFrom: (prospects: any[]) => void) => {
     setFrom(from.filter(p => p.id !== id));
   };
 
@@ -163,7 +149,10 @@ const Demo = () => {
   };
 
   // Render prospect cards with consistent design and emojis
-  const renderProspectCard = (prospect: Prospect, onQualify?: () => void, onBook?: () => void, onRemove?: () => void) => {
+  const renderProspectCard = (prospect: any, onQualify?: () => void, onBook?: () => void, onRemove?: () => void) => {
+    const location = `${prospect.city || 'Unknown'}${prospect.state ? `, ${prospect.state}` : ''}`;
+    const sizeDisplay = prospect.size_sf ? `${(prospect.size_sf / 1000).toFixed(0)}k SF` : prospect.units ? `${prospect.units} units` : 'N/A';
+    
     return (
       <Card key={prospect.id} className="rounded-xl ring-1 ring-border/50 p-4 space-y-2 bg-card/50 backdrop-blur-sm hover:bg-card/70 transition-colors">
         {/* Title with emoji */}
@@ -173,14 +162,14 @@ const Demo = () => {
         
         {/* Meta row */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>{prospect.price}</span>
-          {prospect.buildYear && <span>Built {prospect.buildYear}</span>}
+          <span>$2.5M</span>
+          <span>Built 2010</span>
         </div>
         
         {/* Flags */}
-        {prospect.flags.length > 0 && (
+        {prospect.badges.length > 0 && (
           <div className="flex gap-1 flex-wrap">
-            {prospect.flags.map((flag, index) => (
+            {prospect.badges.map((flag, index) => (
               <Badge key={index} variant="outline" className="text-xs px-2 py-0.5 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300">
                 {flag}
               </Badge>
@@ -190,23 +179,23 @@ const Demo = () => {
         
         {/* Outreach chips */}
         <div className="flex gap-1">
-          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.email === 'reached' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.email === 'green' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
             email
           </span>
-          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.sms === 'reached' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.sms === 'green' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
             sms
           </span>
-          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.call === 'reached' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.call === 'green' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
             call
           </span>
-          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.vm === 'left' ? 'bg-muted/50 text-muted-foreground' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
+          <span className={`px-1.5 py-0.5 text-xs rounded-full font-medium ${prospect.outreach.vm === 'green' ? 'bg-muted/50 text-muted-foreground' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'}`}>
             vm
           </span>
         </div>
         
         {/* Contact */}
         <div className="text-xs text-muted-foreground font-mono bg-muted/30 px-2 py-1 rounded">
-          {prospect.contact}
+          {prospect.contact.email} · {prospect.contact.phone}
         </div>
         
         {/* Actions */}
@@ -317,7 +306,7 @@ const Demo = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium text-sm mb-1">Did we understand this correctly?</h3>
-                  <p className="text-sm text-muted-foreground">{generateBuyBoxSummary(parsedBuyBox)}</p>
+                  <p className="text-sm text-muted-foreground">{generateBuyBoxSummary(parsedBuyBox as any)}</p>
                 </div>
                 <div className="flex gap-2 ml-4">
                   <Button onClick={handleProceed} size="sm">
@@ -337,8 +326,8 @@ const Demo = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Parsed Buy-Box</CardTitle>
-              <Badge className={getCoverageColor(coverageScore(parsedBuyBox))}>
-                Coverage: {coverageScore(parsedBuyBox)}%
+              <Badge className={getCoverageColor(coverageScore(parsedBuyBox as any))}>
+                Coverage: {coverageScore(parsedBuyBox as any)}%
               </Badge>
             </CardHeader>
             <CardContent>
@@ -372,7 +361,7 @@ const Demo = () => {
                 </div>
               </div>
               
-              {coverageScore(parsedBuyBox) < 60 && (
+              {coverageScore(parsedBuyBox as any) < 60 && (
                 <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                   <p className="text-sm text-amber-800 dark:text-amber-200">
                     Add market + size (or units) for accurate matches.
