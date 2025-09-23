@@ -40,6 +40,7 @@ const Demo = () => {
       // Try remote API first
       const res = await fetch(PARSER_API, {
         method: 'POST',
+        mode: 'cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: criteria })
       });
