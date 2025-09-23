@@ -10,6 +10,7 @@ import { parseWithLLM, type Parsed } from '@/lib/llmClient';
 import { normalizeParsed, coverageScore } from '@/lib/normalize';
 import { quickExtract } from '@/lib/quickExtract';
 import { seedProspects } from '@/lib/seedCRM';
+import { parseBuyBoxRemote } from '@/lib/remoteParser';
 
 // Using Prospect type from synth.ts instead of local interface
 
@@ -32,48 +33,33 @@ const Demo = () => {
     setVerified(false);
 
     try {
-      const llmResult = await parseWithLLM(criteria);
-      const parsed = normalizeParsed(llmResult);
-      const cov = coverageScore(parsed);
-      const isBlocked = cov < 30 || !(parsed.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
-      
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 15000); // 15s timeout
+
+      const raw = await parseBuyBoxRemote(criteria, ctrl.signal);
+      clearTimeout(t);
+
+      // If you already have normalizeParsed/coverageScore helpers, keep using them:
+      const parsed = (typeof normalizeParsed === "function") ? normalizeParsed(raw) : raw;
+      const coverage = (typeof coverageScore === "function") ? coverageScore(parsed) : 100;
+
       setParsedBuyBox(parsed);
-      setCoverage(cov);
-      setBlocked(isBlocked);
-      setStatus('idle');
+      setCoverage(coverage);
+
+      // Post-parse gating (soft): never block the network call again.
+      const hasMarket =
+        !!(parsed?.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
+
+      setBlocked(!hasMarket || coverage < 30); // still let user proceed, just warn
       
       // Set for QA inspection
       (window as any).__parsed = parsed;
-    } catch (error) {
-      console.log('LLM parsing failed, using local parser:', error);
-      setStatus('fallback');
-      
-      try {
-        const localResult = parseBuyBoxLocal(criteria);
-        let parsed = normalizeParsed(localResult);
-        let cov = coverageScore(parsed);
-        
-        if (cov < 30) {
-          parsed = normalizeParsed(quickExtract(criteria));
-          cov = coverageScore(parsed);
-        }
-        
-        const isBlocked = cov < 30 || !(parsed.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
-        
-        setParsedBuyBox(parsed);
-        setCoverage(cov);
-        setBlocked(isBlocked);
-        
-        // Set for QA inspection
-        (window as any).__parsed = parsed;
-        
-        // Clear fallback status after 1.5 seconds
-        setTimeout(() => setStatus('idle'), 1500);
-      } catch (localError) {
-        console.error('All parsers failed:', localError);
-        setStatus('error');
-        setTimeout(() => setStatus('idle'), 3000);
-      }
+    } catch (error: any) {
+      console.error('LLM parser error:', error?.message || error);
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 3000);
+    } finally {
+      setStatus('idle');
     }
   };
 
@@ -355,15 +341,16 @@ const Demo = () => {
                   <h3 className="font-medium text-sm mb-1">Did we understand this correctly?</h3>
                   <p className="text-sm text-muted-foreground mb-2">{generateBuyBoxSummary(parsedBuyBox as any)}</p>
                   {blocked && (
-                    <p className="text-sm text-red-700 dark:text-red-300">
-                      Parsing incomplete — add a market or size (or adjust text), then parse again.
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                      We parsed your mandate. Some fields look thin—confirm or tweak, then proceed.
                     </p>
                   )}
                 </div>
                 <div className="flex gap-2 ml-4">
-                  <Button onClick={handleProceed} size="sm" disabled={blocked}>
+                  <Button onClick={handleProceed} size="sm" disabled={false}>
                     Looks right → Proceed
                   </Button>
+                  {blocked && <div className="text-xs text-amber-400 mt-1">Some fields are thin; you can still proceed.</div>}
                   <Button onClick={handleEdit} variant="outline" size="sm">
                     Edit
                   </Button>
