@@ -6,11 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Menu, X, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { parseBuyBoxLocal } from '@/lib/localParser';
-import { parseWithLLM, type Parsed } from '@/lib/llmClient';
 import { normalizeParsed, coverageScore } from '@/lib/normalize';
 import { quickExtract } from '@/lib/quickExtract';
 import { seedProspects } from '@/lib/seedCRM';
-import { parseBuyBoxRemote } from '@/lib/remoteParser';
+import { type Parsed } from '@/lib/llmClient';
 
 // Using Prospect type from synth.ts instead of local interface
 
@@ -38,6 +37,7 @@ const Demo = () => {
     setVerified(false);
 
     try {
+      // Try remote API first
       const res = await fetch(PARSER_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -45,12 +45,11 @@ const Demo = () => {
       });
       
       if (!res.ok) {
-        const t = await res.text().catch(() => '');
-        throw new Error(`HTTP ${res.status} ${t}`);
+        throw new Error(`HTTP ${res.status}`);
       }
       
       const parsed = await res.json();
-      console.log('[DealFinder] Parsed result:', parsed);
+      console.log('[DealFinder] Remote parsed result:', parsed);
       
       // Use existing normalize + coverage functions
       const normalizedParsed = (typeof normalizeParsed === "function") ? normalizeParsed(parsed) : parsed;
@@ -59,7 +58,7 @@ const Demo = () => {
       setParsedBuyBox(normalizedParsed);
       setCoverage(cov);
       
-      // Post-parse gating (soft): never block the network call again.
+      // Post-parse gating (soft)
       const hasMarket = !!(normalizedParsed?.market && (normalizedParsed.market.city || normalizedParsed.market.metro || normalizedParsed.market.state || normalizedParsed.market.country));
       setBlocked(!hasMarket || cov < 30);
       
@@ -68,9 +67,37 @@ const Demo = () => {
       setStatus('idle');
       
     } catch (error: any) {
-      console.error('[DealFinder] LLM fetch failed:', error?.message || error);
-      setErrMsg('Couldn\'t reach the parser. Try again in a moment.');
-      setStatus('error');
+      console.log('[DealFinder] Remote API failed, trying local parser:', error?.message || error);
+      
+      try {
+        // Fallback to local parsers
+        const localResult = parseBuyBoxLocal(criteria);
+        let parsed = normalizeParsed(localResult);
+        let cov = coverageScore(parsed);
+        
+        // If coverage is still low, try quick extract
+        if (cov < 30) {
+          parsed = normalizeParsed(quickExtract(criteria));
+          cov = coverageScore(parsed);
+        }
+        
+        console.log('[DealFinder] Local parsed result:', parsed);
+        
+        setParsedBuyBox(parsed);
+        setCoverage(cov);
+        
+        const hasMarket = !!(parsed?.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
+        setBlocked(!hasMarket || cov < 30);
+        
+        // Set for QA inspection
+        (window as any).__parsed = parsed;
+        setStatus('idle');
+        
+      } catch (localError) {
+        console.error('[DealFinder] All parsers failed:', localError);
+        setErrMsg('Parsing failed. Please try adjusting your text.');
+        setStatus('error');
+      }
     }
   };
 
