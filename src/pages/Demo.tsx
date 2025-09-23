@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Menu, X, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { parseBuyBoxLLM } from '@/lib/apiClient';
 import { parseBuyBoxLocal, coverageScore, validateLLMResponse, type Parsed } from '@/lib/localParser';
+import { getApiBase, setApiBase } from '@/lib/runtimeConfig';
 
 interface Prospect {
   id: string;
@@ -232,9 +232,21 @@ const Demo = () => {
   const handleParse = async () => {
     if (!criteria.trim()) return;
 
+    // Inline LLM function using runtime config
+    async function tryLLM(text: string) {
+      const base = getApiBase().replace(/\/$/, '');
+      const r = await fetch(`${base}/parseBuyBox`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return await r.json();
+    }
+
     try {
       // Try LLM endpoint first
-      const llmResult = await parseBuyBoxLLM(criteria);
+      const llmResult = await tryLLM(criteria);
       
       // Validate LLM response structure
       if (validateLLMResponse(llmResult)) {
@@ -458,7 +470,21 @@ const Demo = () => {
         {/* Deal Finder Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Deal Finder</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Deal Finder</CardTitle>
+              <button
+                onClick={() => {
+                  const url = prompt('Paste API base URL (e.g. https://mandate-parser-brenertomer.replit.app)');
+                  if (url) { 
+                    setApiBase(url); 
+                    location.reload(); 
+                  }
+                }}
+                className="text-xs text-muted-foreground hover:text-primary underline"
+              >
+                Set API URL
+              </button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <Textarea
