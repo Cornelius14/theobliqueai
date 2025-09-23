@@ -168,11 +168,18 @@ const Demo = () => {
           {prospect.title}
         </h4>
         
-        {/* Meta row */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>$2.5M</span>
-          <span>Built 2010</span>
+        {/* Meta info - matchReason */}
+        <div className="text-sm text-muted-foreground line-clamp-2">
+          {prospect.matchReason}
         </div>
+        
+        {/* Price and year info */}
+        {(prospect.price_estimate || prospect.built_year) && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {prospect.price_estimate && <span>{prospect.price_estimate}</span>}
+            {prospect.built_year && <span>Built {prospect.built_year}</span>}
+          </div>
+        )}
         
         {/* Flags */}
         {prospect.badges && prospect.badges.length > 0 && (
