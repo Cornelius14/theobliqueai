@@ -52,34 +52,57 @@ const Product = () => {
             </div>
           </div>
           
-          {/* Properties Table */}
+          {/* Pipeline Table */}
           <div className="bg-card rounded-lg border">
             <div className="p-6">
-              <h3 className="font-semibold mb-4">Deal Pipeline</h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4 text-sm font-medium text-muted-foreground">
-                  <span>Prospects</span>
-                  <span>Qualified Targets</span>
-                  <span>Meetings Booked</span>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold">Deal Pipeline</h3>
+                <div className="text-xs text-muted-foreground uppercase">Asset Types</div>
+              </div>
+              
+              <div className="flex gap-2 mb-4">
+                <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">Multifamily</span>
+                <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">Industrial</span>
+                <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">Land</span>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Prospecting */}
+                <div>
+                  <h4 className="font-medium text-sm mb-3">Prospecting</h4>
+                  <div className="space-y-2">
+                    <div className="p-3 bg-muted/30 rounded-md">
+                      <p className="text-sm">Evaluate 12 warehouse opportunities in Atlanta market</p>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-md">
+                      <p className="text-sm">Screen 8 multifamily owners for Charlotte expansion</p>
+                    </div>
+                  </div>
                 </div>
                 
-                <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-4 py-3 border-b border-border">
-                    <span className="text-sm">Industrial property deal flow</span>
-                    <span className="text-sm text-primary font-medium">247 qualified</span>
-                    <span className="text-sm text-green-600 font-medium">18 booked</span>
+                {/* Qualified Targets */}
+                <div>
+                  <h4 className="font-medium text-sm mb-3">Qualified Targets</h4>
+                  <div className="space-y-2">
+                    <div className="p-3 bg-muted/30 rounded-md">
+                      <p className="text-sm">4 owners at target price band; timing ≤ 60 days</p>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-md">
+                      <p className="text-sm">2 qualified retail opportunities in Miami Beach</p>
+                    </div>
                   </div>
-                  
-                  <div className="grid grid-cols-3 gap-4 py-3 border-b border-border">
-                    <span className="text-sm">Multifamily acquisition targets</span>
-                    <span className="text-sm text-primary font-medium">132 qualified</span>
-                    <span className="text-sm text-green-600 font-medium">31 booked</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-4 py-3">
-                    <span className="text-sm">Retail lease opportunities</span>
-                    <span className="text-sm text-primary font-medium">89 qualified</span>
-                    <span className="text-sm text-green-600 font-medium">24 booked</span>
+                </div>
+                
+                {/* Meetings Booked */}
+                <div>
+                  <h4 className="font-medium text-sm mb-3">Meetings Booked</h4>
+                  <div className="space-y-2">
+                    <div className="p-3 bg-muted/30 rounded-md">
+                      <p className="text-sm">Intro scheduled — Thu 2:30 PM</p>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-md">
+                      <p className="text-sm">Due diligence call — Fri 10:00 AM</p>
+                    </div>
                   </div>
                 </div>
               </div>

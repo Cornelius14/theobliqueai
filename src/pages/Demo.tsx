@@ -85,6 +85,8 @@ const Demo = () => {
   const metros = ["atlanta", "nashville", "miami", "dallas", "charlotte", "nyc", "new york", "houston", "austin", "denver", "phoenix"];
 
   // Enhanced parser function
+  const normalize = (str: string) => str.replace(/,/g, '').replace(/k$/i, '000');
+  
   const parseCriteria = (text: string): ParsedBuyBox => {
     const lower = text.toLowerCase();
     let coverage_score = 0;
@@ -99,9 +101,6 @@ const Demo = () => {
         break;
       }
     }
-    if (intent === "acquisition" && !synonyms.intent.acquisition.some(v => lower.includes(v))) {
-      missing_fields.push("intent");
-    }
     
     // Asset type detection
     let asset_type: ParsedBuyBox["asset_type"] = null;
@@ -114,15 +113,19 @@ const Demo = () => {
     }
     if (!asset_type) missing_fields.push("asset type");
     
-    // Market detection
+    // Market detection - improved patterns
     const market: ParsedBuyBox["market"] = { city: null, state: null, metro: null };
-    const cityStateMatch = text.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),?\s*([A-Z]{2})/);
+    const cityStatePattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),?\s*([A-Z]{2})\b/g;
+    const cityStateAbbr = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+([A-Z]{2})\b/g;
+    
+    const cityStateMatch = text.match(cityStatePattern) || text.match(cityStateAbbr);
     const metroMatch = metros.find(metro => lower.includes(metro));
     
     if (cityStateMatch) {
-      market.city = cityStateMatch[1];
-      market.state = cityStateMatch[2];
-      coverage_score += 20;
+      const parts = cityStateMatch[0].replace(',', '').split(/\s+/);
+      market.state = parts[parts.length - 1];
+      market.city = parts.slice(0, -1).join(' ');
+      coverage_score += 25;
     } else if (metroMatch) {
       market.metro = metroMatch;
       coverage_score += 15;
@@ -130,30 +133,44 @@ const Demo = () => {
       missing_fields.push("market/location");
     }
     
-    // Size detection
+    // Size detection - improved patterns
     let size_range_sf: ParsedBuyBox["size_range_sf"] = null;
     let units_range: ParsedBuyBox["units_range"] = null;
     
-    const sfMatch = text.match(/(\d{1,3}(?:,\d{3})*|\d+)\s*[k]?\s*[-–]\s*(\d{1,3}(?:,\d{3})*|\d+)\s*[k]?\s*(?:sf|sq\.?\s*ft|square feet)/i);
-    const unitsMatch = text.match(/(\d{1,3})\s*[-–]\s*(\d{1,3})\s*units/i);
+    // SF patterns: "18–22k SF", "60k-120k sf", "100,000 sf"
+    const sfPattern = /(\d{1,3}(?:,\d{3})*|\d+k?)\s*[-–—]\s*(\d{1,3}(?:,\d{3})*|\d+k?)\s*(?:sf|sq\.?\s*ft|square\s*feet)/i;
+    const singleSfPattern = /(\d{1,3}(?:,\d{3})*|\d+k?)\s*(?:sf|sq\.?\s*ft|square\s*feet)/i;
+    const unitsPattern = /(\d{1,3})\s*[-–—]\s*(\d{1,3})\s*units/i;
+    
+    const sfMatch = text.match(sfPattern);
+    const singleSf = text.match(singleSfPattern);
+    const unitsMatch = text.match(unitsPattern);
     
     if (sfMatch) {
-      const min = parseInt(sfMatch[1].replace(/,/g, '')) * (sfMatch[1].includes('k') || text.includes('k') ? 1000 : 1);
-      const max = parseInt(sfMatch[2].replace(/,/g, '')) * (sfMatch[2].includes('k') || text.includes('k') ? 1000 : 1);
+      const min = parseInt(normalize(sfMatch[1]));
+      const max = parseInt(normalize(sfMatch[2]));
       size_range_sf = { min, max };
-      coverage_score += 20;
+      coverage_score += 25;
+    } else if (singleSf && !sfMatch) {
+      const size = parseInt(normalize(singleSf[1]));
+      size_range_sf = { min: Math.floor(size * 0.8), max: Math.floor(size * 1.2) };
+      coverage_score += 15;
     } else if (unitsMatch) {
       units_range = { min: parseInt(unitsMatch[1]), max: parseInt(unitsMatch[2]) };
-      coverage_score += 20;
+      coverage_score += 25;
     } else {
       missing_fields.push("size range");
     }
     
-    // Price detection
+    // Price detection - improved patterns
     let price_cap_band: ParsedBuyBox["price_cap_band"] = null;
-    const psfMatch = text.match(/\$?(\d+)\s*[-–]\s*\$?(\d+)\s*psf/i);
-    const capMatch = text.match(/cap\s*[≥>=]\s*(\d+(?:\.\d+)?)%/i);
-    const doorMatch = text.match(/\$?(\d{2,4})k\/door/i);
+    const psfPattern = /\$?(\d+)\s*[-–—]\s*\$?(\d+)\s*(?:psf|per\s*sf)/i;
+    const capPattern = /cap\s*[≥>=]\s*(\d+(?:\.\d+)?)%/i;
+    const doorPattern = /[≤<=]?\s*\$?(\d{2,4})k\/door/i;
+    
+    const psfMatch = text.match(psfPattern);
+    const capMatch = text.match(capPattern);
+    const doorMatch = text.match(doorPattern);
     
     if (psfMatch || capMatch || doorMatch) {
       price_cap_band = {};
@@ -170,33 +187,42 @@ const Demo = () => {
       coverage_score += 15;
     }
     
-    // Build year detection
+    // Build year detection - improved
     let build_year: ParsedBuyBox["build_year"] = null;
-    const buildMatch = text.match(/(built|after)\s*(\d{4})/i);
-    const buildRangeMatch = text.match(/(\d{4})\s*[-–]\s*(\d{4})/);
+    const buildRangePattern = /(?:built\s*)?(\d{4})\s*[-–—]\s*(\d{4})/i;
+    const buildAfterPattern = /(?:built\s*|after\s*)(\d{4})/i;
+    
+    const buildRangeMatch = text.match(buildRangePattern);
+    const buildAfterMatch = text.match(buildAfterPattern);
     
     if (buildRangeMatch) {
       build_year = { after: parseInt(buildRangeMatch[1]), before: parseInt(buildRangeMatch[2]) };
       coverage_score += 10;
-    } else if (buildMatch) {
-      build_year = { after: parseInt(buildMatch[2]) };
+    } else if (buildAfterMatch) {
+      build_year = { after: parseInt(buildAfterMatch[1]) };
       coverage_score += 10;
     }
     
     // Timing detection
     let timing: ParsedBuyBox["timing"] = null;
-    const timingMatch = text.match(/(maturing|closing|need)\s*in\s*(\d+)\s*months?/i);
+    const timingPattern = /(?:maturing|closing|need)\s*in\s*(\d+)[-–—]?(\d+)?\s*months?/i;
     
+    const timingMatch = text.match(timingPattern);
     if (timingMatch) {
-      timing = { months_to_event: parseInt(timingMatch[2]) };
+      timing = { months_to_event: parseInt(timingMatch[1]) };
+      coverage_score += 10;
     }
     
-    // Flags detection
+    // Flags detection - improved
     const flags: ParsedBuyBox["flags"] = {
-      loan_maturing: /loan.*matur/i.test(text),
-      owner_age_65_plus: /owner.*65|65.*owner/i.test(text),
-      off_market: /off.market/i.test(text)
+      loan_maturing: /loan[s]?\s*(?:matur|due)/i.test(text),
+      owner_age_65_plus: /owner[s]?\s*(?:above|over|\+)\s*65|65\+?\s*owner/i.test(text),
+      off_market: /off[-\s]?market/i.test(text)
     };
+    
+    // Final coverage calculation
+    if (Object.values(flags).some(Boolean)) coverage_score += 5;
+    if (timing) coverage_score += 5;
     
     return {
       intent,
@@ -208,7 +234,7 @@ const Demo = () => {
       build_year,
       timing,
       flags,
-      coverage_score,
+      coverage_score: Math.min(100, coverage_score),
       missing_fields
     };
   };
@@ -325,7 +351,7 @@ const Demo = () => {
     if (!parsedData) return;
     
     if (parsedData.coverage_score < 70) {
-      alert("Please add missing criteria (market + size) to generate accurate prospects.");
+      alert("Add market + size to generate accurate prospects.");
       return;
     }
     
@@ -408,59 +434,59 @@ const Demo = () => {
   ) => (
     <div className="space-y-3">
       {list.map((prospect) => (
-        <Card key={prospect.id} className="p-4 border border-border">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h4 className="font-medium text-sm">{prospect.name}</h4>
-              <p className="text-xs text-muted-foreground mt-1">
-                {prospect.market_city}, {prospect.market_state}
-                {prospect.size_sf && ` • ${prospect.size_sf.toLocaleString()} SF`}
-                {prospect.units && ` • ${prospect.units} units`}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {prospect.price_psf && `$${prospect.price_psf} PSF`}
-                {prospect.cap_rate && `${prospect.cap_rate.toFixed(1)}% Cap`}
-                {prospect.build_year && ` • Built ${prospect.build_year}`}
-              </p>
-              
-              {/* Outreach chips */}
-              <div className="flex gap-1 mt-2">
-                <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.email === 'reached' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
-                  📧 {prospect.outreach.email}
-                </span>
-                <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.sms === 'reached' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
-                  💬 {prospect.outreach.sms}
-                </span>
-                <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                  🎤 {prospect.outreach.vm}
-                </span>
-                <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.call === 'reached' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
-                  📞 {prospect.outreach.call}
-                </span>
-              </div>
-              
+        <Card key={prospect.id} className="p-4 rounded-xl ring-1 ring-border">
+          <div className="space-y-3">
+            {/* Title */}
+            <div className="flex items-start justify-between">
+              <h4 className="font-medium text-sm">
+                {prospect.asset_type?.charAt(0).toUpperCase() + prospect.asset_type?.slice(1)} — {prospect.size_sf ? `${prospect.size_sf.toLocaleString()} SF` : `${prospect.units} units`} ({prospect.market_city}, {prospect.market_state})
+              </h4>
+            </div>
+            
+            {/* Outreach chips - right under title */}
+            <div className="flex gap-1">
+              <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.email === 'reached' ? 'bg-green-600/10 text-green-600' : 'bg-red-600/10 text-red-600'}`}>
+                email
+              </span>
+              <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.sms === 'reached' ? 'bg-green-600/10 text-green-600' : 'bg-red-600/10 text-red-600'}`}>
+                sms
+              </span>
+              <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.call === 'reached' ? 'bg-green-600/10 text-green-600' : 'bg-red-600/10 text-red-600'}`}>
+                call
+              </span>
+              <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.vm === 'left' ? 'bg-muted text-muted-foreground' : 'bg-red-600/10 text-red-600'}`}>
+                vm
+              </span>
+            </div>
+            
+            {/* Meta row */}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              {prospect.price_psf && <span>${prospect.price_psf} PSF</span>}
+              {prospect.cap_rate && <span>{prospect.cap_rate.toFixed(1)}% Cap</span>}
+              {prospect.build_year && <span>Built {prospect.build_year}</span>}
               {prospect.flags.length > 0 && (
-                <div className="flex gap-1 mt-2">
+                <div className="flex gap-1">
                   {prospect.flags.map((flag, i) => (
-                    <span key={i} className="px-1.5 py-0.5 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs rounded">
+                    <Badge key={i} variant="secondary" className="text-xs px-1.5 py-0.5">
                       {flag}
-                    </span>
+                    </Badge>
                   ))}
                 </div>
               )}
-              
-              {/* Contact info */}
-              <div className="text-xs text-muted-foreground mt-2 font-mono">
-                {prospect.contact.email} • {prospect.contact.phone}
-              </div>
             </div>
             
-            <div className="flex gap-1 ml-2">
-              <Button size="sm" variant="outline" onClick={() => onMove(prospect.id)}>
-                {moveIcon} {moveLabel}
+            {/* Contact row */}
+            <div className="text-xs text-muted-foreground font-mono">
+              {prospect.contact.email} · {prospect.contact.phone}
+            </div>
+            
+            {/* Footer actions */}
+            <div className="flex gap-2 pt-2">
+              <Button size="sm" variant="default" onClick={() => onMove(prospect.id)} className="text-xs">
+                {moveLabel}
               </Button>
-              <Button size="sm" variant="outline" onClick={() => onRemove(prospect.id)}>
-                ❌
+              <Button size="sm" variant="outline" onClick={() => onRemove(prospect.id)} className="text-xs">
+                Remove
               </Button>
             </div>
           </div>
