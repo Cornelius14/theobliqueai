@@ -4,26 +4,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Menu, X, Trash2 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
 
-// Data structures for parsing and CRM
-interface ParsedBuyBox {
-  intent: "acquisition" | "lease" | "refinance" | "title";
-  asset_type: "industrial" | "warehouse" | "multifamily" | "retail" | "land" | "data center" | null;
-  market: { city: string | null; state: string | null; metro: string | null };
-  size_range_sf: { min?: number; max?: number } | null;
-  units_range: { min?: number; max?: number } | null;
-  price_cap_band: { psf_min?: number; psf_max?: number; cap_min?: number; cap_max?: number; per_door_max?: number } | null;
-  build_year: { after?: number; before?: number } | null;
-  timing: { months_to_event?: number } | null;
-  flags: { loan_maturing?: boolean; owner_age_65_plus?: boolean; off_market?: boolean };
-  coverage_score: number;
-  missing_fields: string[];
+// Exact data model as specified
+type Parsed = {
+  intent: "acquisition" | "lease" | "refinance" | "title" | null,
+  asset_type: "industrial" | "warehouse" | "multifamily" | "retail" | "land" | "data center" | "single-family" | null,
+  market: { city: string|null, state: string|null, metro: string|null },
+  size_range_sf: { min?: number|null, max?: number|null } | null,
+  units_range: { min?: number|null, max?: number|null } | null,
+  price_cap_band: { psf_min?: number|null, psf_max?: number|null, cap_min?: number|null, cap_max?: number|null, per_door_max?: number|null, budget_min?: number|null, budget_max?: number|null } | null,
+  build_year: { after?: number|null, before?: number|null } | null,
+  owner_age_min?: number|null,
+  timing: { months_to_event?: number|null } | null,
+  flags: { loan_maturing?: boolean, owner_age_65_plus?: boolean, off_market?: boolean },
+  coverage: number
 }
 
 interface Prospect {
@@ -36,6 +31,8 @@ interface Prospect {
   units?: number;
   price_psf?: number;
   cap_rate?: number;
+  per_door?: number;
+  budget?: number;
   build_year?: number;
   flags: string[];
   contact: {
@@ -53,142 +50,190 @@ interface Prospect {
 
 const Demo = () => {
   const [criteria, setCriteria] = useState('');
-  const [parsedData, setParsedData] = useState<ParsedBuyBox | null>(null);
+  const [parsedData, setParsedData] = useState<Parsed | null>(null);
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [qualified, setQualified] = useState<Prospect[]>([]);
   const [meetings, setMeetings] = useState<Prospect[]>([]);
   const [isSimulating, setIsSimulating] = useState(false);
+  const { toast } = useToast();
 
-  const examples = [
-    "Find value-add multifamily, 20–40 units, in Charlotte, built 1980–2005, cap ≥ 6.5%, ≤ $180k/door.",
-    "Find 18–22k SF retail for lease in Miami Beach, $180–$220 PSF, frontage ≥ 60 ft.",
-    "Find Dallas multifamily owners with loans maturing in 3–6 months, 50–150 units, LTV ≥ 65% for refinance.",
-    "Find Travis County, TX properties with recent deed filings likely to need title insurance in ≤45 days."
-  ];
-
-  // Synonym maps and patterns
-  const synonyms = {
-    intent: {
-      acquisition: ["buy", "acquire", "purchase", "looking to buy"],
-      lease: ["for lease", "lease", "rent"],
-      refinance: ["refi", "refinance"],
-      title: ["title", "escrow", "deed", "closing"]
-    },
-    asset_type: {
-      industrial: ["industrial", "warehouse", "plant", "logistics"],
-      multifamily: ["multifamily", "apartments", "units"],
-      retail: ["retail", "shop", "storefront"],
-      "data center": ["data center", "datacenter"]
-    }
-  };
-
-  const metros = ["atlanta", "nashville", "miami", "dallas", "charlotte", "nyc", "new york", "houston", "austin", "denver", "phoenix"];
-
-  // Enhanced parser function
-  const normalize = (str: string) => str.replace(/,/g, '').replace(/k$/i, '000');
-  
-  const parseCriteria = (text: string): ParsedBuyBox => {
+  // Robust rule-based parser
+  const parseCriteria = (text: string): Parsed => {
     const lower = text.toLowerCase();
-    let coverage_score = 0;
-    const missing_fields: string[] = [];
-    
+    let coverage = 0;
+
+    // Synonyms
+    const synonyms = {
+      asset_type: {
+        industrial: ['industrial', 'warehouse', 'logistics', 'plant'],
+        warehouse: ['warehouse', 'industrial', 'logistics', 'plant'],
+        multifamily: ['multifamily', 'apartments', 'units'],
+        retail: ['retail', 'storefront', 'shop'],
+        'single-family': ['single-family', 'sfh', 'single family', 'house', 'houses'],
+        'data center': ['data center', 'datacenter'],
+        land: ['land']
+      },
+      intent: {
+        acquisition: ['acquire', 'buy', 'purchase', 'looking to buy'],
+        lease: ['lease', 'for lease', 'rent'],
+        refinance: ['refi', 'refinance'],
+        title: ['title', 'escrow', 'deed', 'closing']
+      }
+    };
+
     // Intent detection
-    let intent: ParsedBuyBox["intent"] = "acquisition";
+    let intent: Parsed["intent"] = null;
     for (const [key, values] of Object.entries(synonyms.intent)) {
       if (values.some(v => lower.includes(v))) {
-        intent = key as ParsedBuyBox["intent"];
-        coverage_score += 15;
+        intent = key as Parsed["intent"];
+        coverage += 20;
         break;
       }
     }
-    
+
     // Asset type detection
-    let asset_type: ParsedBuyBox["asset_type"] = null;
+    let asset_type: Parsed["asset_type"] = null;
     for (const [key, values] of Object.entries(synonyms.asset_type)) {
       if (values.some(v => lower.includes(v))) {
-        asset_type = key as ParsedBuyBox["asset_type"];
-        coverage_score += 20;
+        asset_type = key as Parsed["asset_type"];
+        coverage += 20;
         break;
       }
     }
-    if (!asset_type) missing_fields.push("asset type");
+
+    // Location extraction
+    const market: Parsed["market"] = { city: null, state: null, metro: null };
     
-    // Market detection - improved patterns
-    const market: ParsedBuyBox["market"] = { city: null, state: null, metro: null };
-    const cityStatePattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),?\s*([A-Z]{2})\b/g;
-    const cityStateAbbr = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+([A-Z]{2})\b/g;
-    
-    const cityStateMatch = text.match(cityStatePattern) || text.match(cityStateAbbr);
-    const metroMatch = metros.find(metro => lower.includes(metro));
+    // City, State patterns
+    const cityStatePattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),?\s*([A-Z]{2})\b/;
+    const cityStateMatch = text.match(cityStatePattern);
     
     if (cityStateMatch) {
-      const parts = cityStateMatch[0].replace(',', '').split(/\s+/);
-      market.state = parts[parts.length - 1];
-      market.city = parts.slice(0, -1).join(' ');
-      coverage_score += 25;
-    } else if (metroMatch) {
-      market.metro = metroMatch;
-      coverage_score += 15;
+      market.city = cityStateMatch[1];
+      market.state = cityStateMatch[2];
+      coverage += 25;
     } else {
-      missing_fields.push("market/location");
+      // Metro detection
+      const metros = {
+        'atlanta': { city: 'Atlanta', state: 'GA', metro: 'Atlanta' },
+        'dallas': { city: 'Dallas', state: 'TX', metro: 'Dallas' },
+        'miami': { city: 'Miami', state: 'FL', metro: 'Miami' },
+        'nashville': { city: 'Nashville', state: 'TN', metro: 'Nashville' },
+        'charlotte': { city: 'Charlotte', state: 'NC', metro: 'Charlotte' },
+        'nyc': { city: 'New York', state: 'NY', metro: 'NYC' },
+        'new york': { city: 'New York', state: 'NY', metro: 'NYC' },
+        'sf': { city: 'San Francisco', state: 'CA', metro: 'SF Bay Area' },
+        'san francisco': { city: 'San Francisco', state: 'CA', metro: 'SF Bay Area' },
+        'sf bay area': { city: 'San Francisco', state: 'CA', metro: 'SF Bay Area' },
+        'bay area': { city: 'San Francisco', state: 'CA', metro: 'SF Bay Area' }
+      };
+      
+      for (const [metro, data] of Object.entries(metros)) {
+        if (lower.includes(metro)) {
+          market.city = data.city;
+          market.state = data.state;
+          market.metro = data.metro;
+          coverage += 25;
+          break;
+        }
+      }
     }
+
+    // Size/units extraction with k normalization
+    let size_range_sf: Parsed["size_range_sf"] = null;
+    let units_range: Parsed["units_range"] = null;
+
+    const normalize = (str: string): number => {
+      const cleaned = str.replace(/,/g, '');
+      if (cleaned.endsWith('k')) {
+        return parseInt(cleaned.slice(0, -1)) * 1000;
+      }
+      return parseInt(cleaned);
+    };
+
+    // SF patterns
+    const sfRangePattern = /(\d{1,3}(?:,\d{3})*|\d+k?)\s*[-–—]\s*(\d{1,3}(?:,\d{3})*|\d+k?)\s*(?:sf|sq\.?\s*ft|square\s*feet)/i;
+    const sfSinglePattern = /(\d{1,3}(?:,\d{3})*|\d+k?)\s*(?:sf|sq\.?\s*ft|square\s*feet)/i;
     
-    // Size detection - improved patterns
-    let size_range_sf: ParsedBuyBox["size_range_sf"] = null;
-    let units_range: ParsedBuyBox["units_range"] = null;
+    const sfRangeMatch = text.match(sfRangePattern);
+    const sfSingleMatch = text.match(sfSinglePattern);
     
-    // SF patterns: "18–22k SF", "60k-120k sf", "100,000 sf"
-    const sfPattern = /(\d{1,3}(?:,\d{3})*|\d+k?)\s*[-–—]\s*(\d{1,3}(?:,\d{3})*|\d+k?)\s*(?:sf|sq\.?\s*ft|square\s*feet)/i;
-    const singleSfPattern = /(\d{1,3}(?:,\d{3})*|\d+k?)\s*(?:sf|sq\.?\s*ft|square\s*feet)/i;
-    const unitsPattern = /(\d{1,3})\s*[-–—]\s*(\d{1,3})\s*units/i;
-    
-    const sfMatch = text.match(sfPattern);
-    const singleSf = text.match(singleSfPattern);
-    const unitsMatch = text.match(unitsPattern);
-    
-    if (sfMatch) {
-      const min = parseInt(normalize(sfMatch[1]));
-      const max = parseInt(normalize(sfMatch[2]));
-      size_range_sf = { min, max };
-      coverage_score += 25;
-    } else if (singleSf && !sfMatch) {
-      const size = parseInt(normalize(singleSf[1]));
-      size_range_sf = { min: Math.floor(size * 0.8), max: Math.floor(size * 1.2) };
-      coverage_score += 15;
-    } else if (unitsMatch) {
-      units_range = { min: parseInt(unitsMatch[1]), max: parseInt(unitsMatch[2]) };
-      coverage_score += 25;
-    } else {
-      missing_fields.push("size range");
+    if (sfRangeMatch) {
+      size_range_sf = {
+        min: normalize(sfRangeMatch[1]),
+        max: normalize(sfRangeMatch[2])
+      };
+      coverage += 25;
+    } else if (sfSingleMatch && !sfRangeMatch) {
+      const size = normalize(sfSingleMatch[1]);
+      size_range_sf = { min: size, max: size };
+      coverage += 25;
     }
+
+    // Units patterns
+    const unitsRangePattern = /(\d{1,3})\s*[-–—]\s*(\d{1,3})\s*units/i;
+    const unitsMatch = text.match(unitsRangePattern);
     
-    // Price detection - improved patterns
-    let price_cap_band: ParsedBuyBox["price_cap_band"] = null;
-    const psfPattern = /\$?(\d+)\s*[-–—]\s*\$?(\d+)\s*(?:psf|per\s*sf)/i;
+    if (unitsMatch) {
+      units_range = {
+        min: parseInt(unitsMatch[1]),
+        max: parseInt(unitsMatch[2])
+      };
+      coverage += 25;
+    }
+
+    // Price/cap/budget extraction
+    let price_cap_band: Parsed["price_cap_band"] = null;
+
+    // PSF patterns
+    const psfRangePattern = /\$?(\d+)\s*[-–—]\s*\$?(\d+)\s*(?:psf|per\s*sf)/i;
+    const psfMatch = text.match(psfRangePattern);
+
+    // CAP patterns
     const capPattern = /cap\s*[≥>=]\s*(\d+(?:\.\d+)?)%/i;
-    const doorPattern = /[≤<=]?\s*\$?(\d{2,4})k\/door/i;
-    
-    const psfMatch = text.match(psfPattern);
+    const capRangePattern = /cap\s*(\d+(?:\.\d+)?)\s*[-–—]\s*(\d+(?:\.\d+)?)%/i;
     const capMatch = text.match(capPattern);
-    const doorMatch = text.match(doorPattern);
-    
-    if (psfMatch || capMatch || doorMatch) {
+    const capRangeMatch = text.match(capRangePattern);
+
+    // Per door patterns
+    const perDoorPattern = /[≤<=]?\s*\$?(\d{2,4})k\/door/i;
+    const perDoorMatch = text.match(perDoorPattern);
+
+    // Budget patterns
+    const budgetPattern = /between\s*(\d+)\s*[-–—]\s*(\d+)\s*million/i;
+    const budgetMatch = text.match(budgetPattern);
+
+    if (psfMatch || capMatch || capRangeMatch || perDoorMatch || budgetMatch) {
       price_cap_band = {};
+      
       if (psfMatch) {
         price_cap_band.psf_min = parseInt(psfMatch[1]);
         price_cap_band.psf_max = parseInt(psfMatch[2]);
       }
+      
       if (capMatch) {
         price_cap_band.cap_min = parseFloat(capMatch[1]);
       }
-      if (doorMatch) {
-        price_cap_band.per_door_max = parseInt(doorMatch[1]) * 1000;
+      
+      if (capRangeMatch) {
+        price_cap_band.cap_min = parseFloat(capRangeMatch[1]);
+        price_cap_band.cap_max = parseFloat(capRangeMatch[2]);
       }
-      coverage_score += 15;
+      
+      if (perDoorMatch) {
+        price_cap_band.per_door_max = parseInt(perDoorMatch[1]) * 1000;
+      }
+      
+      if (budgetMatch) {
+        price_cap_band.budget_min = parseInt(budgetMatch[1]) * 1000000;
+        price_cap_band.budget_max = parseInt(budgetMatch[2]) * 1000000;
+      }
+      
+      coverage += 10;
     }
-    
-    // Build year detection - improved
-    let build_year: ParsedBuyBox["build_year"] = null;
+
+    // Build year extraction
+    let build_year: Parsed["build_year"] = null;
     const buildRangePattern = /(?:built\s*)?(\d{4})\s*[-–—]\s*(\d{4})/i;
     const buildAfterPattern = /(?:built\s*|after\s*)(\d{4})/i;
     
@@ -196,34 +241,37 @@ const Demo = () => {
     const buildAfterMatch = text.match(buildAfterPattern);
     
     if (buildRangeMatch) {
-      build_year = { after: parseInt(buildRangeMatch[1]), before: parseInt(buildRangeMatch[2]) };
-      coverage_score += 10;
+      build_year = {
+        after: parseInt(buildRangeMatch[1]),
+        before: parseInt(buildRangeMatch[2])
+      };
     } else if (buildAfterMatch) {
       build_year = { after: parseInt(buildAfterMatch[1]) };
-      coverage_score += 10;
     }
-    
-    // Timing detection
-    let timing: ParsedBuyBox["timing"] = null;
-    const timingPattern = /(?:maturing|closing|need)\s*in\s*(\d+)[-–—]?(\d+)?\s*months?/i;
-    
+
+    // Owner age extraction
+    let owner_age_min: number | null = null;
+    const ownerAgePattern = /owners?\s*(?:above|over|\+)\s*(\d+)/i;
+    const ownerAgeMatch = text.match(ownerAgePattern);
+    if (ownerAgeMatch) {
+      owner_age_min = parseInt(ownerAgeMatch[1]);
+    }
+
+    // Timing extraction
+    let timing: Parsed["timing"] = null;
+    const timingPattern = /(?:maturing|closing|need)\s*in\s*(\d+)(?:\s*[-–—]\s*(\d+))?\s*months?/i;
     const timingMatch = text.match(timingPattern);
     if (timingMatch) {
       timing = { months_to_event: parseInt(timingMatch[1]) };
-      coverage_score += 10;
     }
-    
-    // Flags detection - improved
-    const flags: ParsedBuyBox["flags"] = {
+
+    // Flags detection
+    const flags: Parsed["flags"] = {
       loan_maturing: /loan[s]?\s*(?:matur|due)/i.test(text),
-      owner_age_65_plus: /owner[s]?\s*(?:above|over|\+)\s*65|65\+?\s*owner/i.test(text),
+      owner_age_65_plus: owner_age_min ? owner_age_min >= 65 : /owner[s]?\s*(?:above|over|\+)\s*65|65\+?\s*owner/i.test(text),
       off_market: /off[-\s]?market/i.test(text)
     };
-    
-    // Final coverage calculation
-    if (Object.values(flags).some(Boolean)) coverage_score += 5;
-    if (timing) coverage_score += 5;
-    
+
     return {
       intent,
       asset_type,
@@ -232,28 +280,17 @@ const Demo = () => {
       units_range,
       price_cap_band,
       build_year,
+      owner_age_min,
       timing,
       flags,
-      coverage_score: Math.min(100, coverage_score),
-      missing_fields
+      coverage: Math.min(100, coverage)
     };
   };
 
-  const handleParse = () => {
-    if (criteria.trim()) {
-      const parsed = parseCriteria(criteria);
-      setParsedData(parsed);
-    }
-  };
-
-  const handleUseExample = (example: string) => {
-    setCriteria(example);
-  };
-
-  // Generate names and contacts
+  // Generate contact information
   const generateContact = () => {
-    const firstNames = ['John', 'Sarah', 'Michael', 'Lisa', 'David', 'Jennifer', 'Robert', 'Ashley', 'James', 'Maria'];
-    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Wilson'];
+    const firstNames = ['Alex', 'Jordan', 'Taylor', 'Morgan', 'Casey', 'Riley', 'Blake', 'Avery', 'Cameron', 'Drew'];
+    const lastNames = ['Johnson', 'Williams', 'Brown', 'Davis', 'Miller', 'Wilson', 'Moore', 'Taylor', 'Anderson', 'Thomas'];
     const domains = ['propco.com', 'realestate.net', 'investments.com', 'holdings.org', 'capital.biz'];
     
     const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
@@ -267,72 +304,139 @@ const Demo = () => {
     };
   };
 
-  // Generate mock prospects based on parsed criteria
+  // Generate prospects that STRICTLY match parsed criteria
   const generateMockProspects = (): Prospect[] => {
     if (!parsedData) return [];
     
     const prospects: Prospect[] = [];
-    const cities = parsedData.market.city ? [parsedData.market.city] : 
-                   parsedData.market.metro === 'charlotte' ? ['Charlotte', 'Gastonia', 'Concord'] :
-                   parsedData.market.metro === 'dallas' ? ['Dallas', 'Plano', 'Irving'] :
-                   parsedData.market.metro === 'miami' ? ['Miami', 'Miami Beach', 'Aventura'] :
-                   ['Atlanta', 'Charlotte', 'Dallas'];
     
-    const states = parsedData.market.state ? [parsedData.market.state] : ['NC', 'TX', 'FL', 'GA'];
+    // Market mapping
+    const getMarketOptions = () => {
+      if (parsedData.market.city && parsedData.market.state) {
+        return [{ city: parsedData.market.city, state: parsedData.market.state }];
+      }
+      
+      // Metro suburbs mapping
+      const metroSuburbs: { [key: string]: Array<{city: string, state: string}> } = {
+        'Atlanta': [
+          { city: 'Atlanta', state: 'GA' },
+          { city: 'Marietta', state: 'GA' },
+          { city: 'Sandy Springs', state: 'GA' }
+        ],
+        'Dallas': [
+          { city: 'Dallas', state: 'TX' },
+          { city: 'Plano', state: 'TX' },
+          { city: 'Irving', state: 'TX' }
+        ],
+        'Miami': [
+          { city: 'Miami', state: 'FL' },
+          { city: 'Miami Beach', state: 'FL' },
+          { city: 'Aventura', state: 'FL' }
+        ],
+        'Charlotte': [
+          { city: 'Charlotte', state: 'NC' },
+          { city: 'Gastonia', state: 'NC' },
+          { city: 'Concord', state: 'NC' }
+        ],
+        'San Francisco': [
+          { city: 'San Francisco', state: 'CA' },
+          { city: 'Oakland', state: 'CA' },
+          { city: 'Palo Alto', state: 'CA' }
+        ]
+      };
+      
+      if (parsedData.market.metro && metroSuburbs[parsedData.market.city || '']) {
+        return metroSuburbs[parsedData.market.city || ''];
+      }
+      
+      return [{ city: 'Atlanta', state: 'GA' }];
+    };
+
+    const marketOptions = getMarketOptions();
     
     for (let i = 0; i < 10; i++) {
       const contact = generateContact();
-      const city = cities[Math.floor(Math.random() * cities.length)];
-      const state = states[Math.floor(Math.random() * states.length)];
+      const market = marketOptions[Math.floor(Math.random() * marketOptions.length)];
       
-      let size_sf, units, price_psf, cap_rate, name;
+      let size_sf: number | undefined;
+      let units: number | undefined;
+      let name = '';
       
-      // Generate size within constraints
+      // Generate size/units within STRICT constraints
       if (parsedData.size_range_sf) {
         const min = parsedData.size_range_sf.min || 10000;
-        const max = parsedData.size_range_sf.max || min + 50000;
-        size_sf = Math.floor(Math.random() * (max - min) + min);
-        name = `${parsedData.asset_type || 'Property'} – ${(size_sf / 1000).toFixed(0)}k SF`;
+        const max = parsedData.size_range_sf.max || min;
+        size_sf = Math.floor(Math.random() * (max - min + 1)) + min;
+        
+        const assetLabel = parsedData.asset_type === 'warehouse' ? 'Industrial' : 
+                          parsedData.asset_type?.charAt(0).toUpperCase() + parsedData.asset_type?.slice(1);
+        name = `${assetLabel} — ${(size_sf / 1000).toFixed(0)}k SF`;
       } else if (parsedData.units_range) {
         const min = parsedData.units_range.min || 20;
-        const max = parsedData.units_range.max || min + 30;
-        units = Math.floor(Math.random() * (max - min) + min);
-        name = `${parsedData.asset_type || 'Multifamily'} – ${units} units`;
+        const max = parsedData.units_range.max || min;
+        units = Math.floor(Math.random() * (max - min + 1)) + min;
+        name = `Multifamily — ${units} units`;
       } else {
-        size_sf = 25000 + Math.floor(Math.random() * 50000);
-        name = `${parsedData.asset_type || 'Property'} – ${(size_sf / 1000).toFixed(0)}k SF`;
+        // Default fallback
+        size_sf = 50000;
+        name = `${parsedData.asset_type || 'Industrial'} — 50k SF`;
       }
       
       // Generate pricing within constraints
-      if (parsedData.price_cap_band?.psf_min && parsedData.price_cap_band?.psf_max) {
-        price_psf = Math.floor(Math.random() * (parsedData.price_cap_band.psf_max - parsedData.price_cap_band.psf_min) + parsedData.price_cap_band.psf_min);
-      } else if (parsedData.price_cap_band?.cap_min) {
-        cap_rate = parsedData.price_cap_band.cap_min + Math.random() * 2;
-      } else {
-        price_psf = 80 + Math.floor(Math.random() * 120);
+      let price_psf: number | undefined;
+      let cap_rate: number | undefined;
+      let per_door: number | undefined;
+      let budget: number | undefined;
+      
+      if (parsedData.price_cap_band) {
+        if (parsedData.price_cap_band.psf_min && parsedData.price_cap_band.psf_max) {
+          price_psf = Math.floor(Math.random() * (parsedData.price_cap_band.psf_max - parsedData.price_cap_band.psf_min + 1)) + parsedData.price_cap_band.psf_min;
+        } else if (parsedData.price_cap_band.cap_min) {
+          const capMin = parsedData.price_cap_band.cap_min;
+          const capMax = parsedData.price_cap_band.cap_max || capMin + 2;
+          cap_rate = capMin + Math.random() * (capMax - capMin);
+        } else if (parsedData.price_cap_band.per_door_max && units) {
+          per_door = Math.floor(Math.random() * parsedData.price_cap_band.per_door_max * 0.8) + parsedData.price_cap_band.per_door_max * 0.2;
+        } else if (parsedData.price_cap_band.budget_min && parsedData.price_cap_band.budget_max) {
+          budget = Math.floor(Math.random() * (parsedData.price_cap_band.budget_max - parsedData.price_cap_band.budget_min)) + parsedData.price_cap_band.budget_min;
+        }
+      }
+      
+      // Generate build year within constraints
+      let build_year: number | undefined;
+      if (parsedData.build_year) {
+        const afterYear = parsedData.build_year.after || 1980;
+        const beforeYear = parsedData.build_year.before || 2024;
+        build_year = Math.floor(Math.random() * (beforeYear - afterYear + 1)) + afterYear;
       }
       
       // Generate flags
       const flags: string[] = [];
       if (parsedData.flags.loan_maturing) flags.push('Loan maturing');
-      if (parsedData.flags.owner_age_65_plus && Math.random() > 0.7) flags.push('Owner 65+');
-      if (parsedData.flags.off_market && Math.random() > 0.8) flags.push('Off-market');
+      if (parsedData.flags.owner_age_65_plus || (parsedData.owner_age_min && parsedData.owner_age_min >= 65)) {
+        flags.push(`Owner ≥ ${parsedData.owner_age_min || 65}`);
+      } else if (parsedData.owner_age_min) {
+        flags.push(`Owner ≥ ${parsedData.owner_age_min}`);
+      }
+      if (parsedData.flags.off_market) flags.push('Off-market');
       
       // Generate outreach status
-      const outreachOptions = ['reached', 'no-answer'] as const;
-      const vmOptions = ['left', 'none'] as const;
+      const outreachOptions: ("reached" | "no-answer")[] = ['reached', 'no-answer'];
+      const vmOptions: ("left" | "none")[] = ['left', 'none'];
       
       prospects.push({
         id: String(i + 1),
         name,
         asset_type: parsedData.asset_type || 'industrial',
-        market_city: city,
-        market_state: state,
+        market_city: market.city,
+        market_state: market.state,
         size_sf,
         units,
         price_psf,
         cap_rate,
-        build_year: parsedData.build_year?.after ? parsedData.build_year.after + Math.floor(Math.random() * 20) : 1990 + Math.floor(Math.random() * 30),
+        per_door,
+        budget,
+        build_year,
         flags,
         contact,
         outreach: {
@@ -347,11 +451,21 @@ const Demo = () => {
     return prospects;
   };
 
+  const handleParse = () => {
+    if (criteria.trim()) {
+      const parsed = parseCriteria(criteria);
+      setParsedData(parsed);
+    }
+  };
+
   const handleSendToCRM = () => {
     if (!parsedData) return;
     
-    if (parsedData.coverage_score < 70) {
-      alert("Add market + size to generate accurate prospects.");
+    if (parsedData.coverage < 60) {
+      toast({
+        title: "Add market + size to generate accurate prospects.",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -380,12 +494,11 @@ const Demo = () => {
   };
 
   const handleSimulate = () => {
-    if (isSimulating) return;
+    if (isSimulating || prospects.length === 0) return;
     
     setIsSimulating(true);
     
     const interval = setInterval(() => {
-      // Move 2 prospects to qualified
       setProspects(prev => {
         if (prev.length >= 2) {
           const toMove = prev.slice(0, 2);
@@ -395,7 +508,6 @@ const Demo = () => {
         return prev;
       });
       
-      // Move 1 qualified to meetings
       setQualified(prev => {
         if (prev.length >= 1) {
           const toMove = prev[0];
@@ -406,295 +518,309 @@ const Demo = () => {
       });
     }, 3000);
 
-    // Stop simulation after 10 seconds
     setTimeout(() => {
       clearInterval(interval);
       setIsSimulating(false);
     }, 10000);
   };
 
-  const handleClearDemo = () => {
-    setProspects([]);
-    setQualified([]);
-    setMeetings([]);
-    setIsSimulating(false);
-  };
-
   const handleNavClick = (anchor: string) => {
     window.location.href = `/#${anchor}`;
   };
 
-  // Render prospect cards
-  const renderProspectList = (
-    list: Prospect[], 
-    onMove: (id: string) => void, 
-    onRemove: (id: string) => void,
-    moveLabel: string,
-    moveIcon: string
-  ) => (
-    <div className="space-y-3">
-      {list.map((prospect) => (
-        <Card key={prospect.id} className="p-4 rounded-xl ring-1 ring-border">
-          <div className="space-y-3">
-            {/* Title */}
-            <div className="flex items-start justify-between">
-              <h4 className="font-medium text-sm">
-                {prospect.asset_type?.charAt(0).toUpperCase() + prospect.asset_type?.slice(1)} — {prospect.size_sf ? `${prospect.size_sf.toLocaleString()} SF` : `${prospect.units} units`} ({prospect.market_city}, {prospect.market_state})
-              </h4>
-            </div>
-            
-            {/* Outreach chips - right under title */}
-            <div className="flex gap-1">
-              <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.email === 'reached' ? 'bg-green-600/10 text-green-600' : 'bg-red-600/10 text-red-600'}`}>
-                email
-              </span>
-              <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.sms === 'reached' ? 'bg-green-600/10 text-green-600' : 'bg-red-600/10 text-red-600'}`}>
-                sms
-              </span>
-              <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.call === 'reached' ? 'bg-green-600/10 text-green-600' : 'bg-red-600/10 text-red-600'}`}>
-                call
-              </span>
-              <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.vm === 'left' ? 'bg-muted text-muted-foreground' : 'bg-red-600/10 text-red-600'}`}>
-                vm
-              </span>
-            </div>
-            
-            {/* Meta row */}
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              {prospect.price_psf && <span>${prospect.price_psf} PSF</span>}
-              {prospect.cap_rate && <span>{prospect.cap_rate.toFixed(1)}% Cap</span>}
-              {prospect.build_year && <span>Built {prospect.build_year}</span>}
-              {prospect.flags.length > 0 && (
-                <div className="flex gap-1">
-                  {prospect.flags.map((flag, i) => (
-                    <Badge key={i} variant="secondary" className="text-xs px-1.5 py-0.5">
-                      {flag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {/* Contact row */}
-            <div className="text-xs text-muted-foreground font-mono">
-              {prospect.contact.email} · {prospect.contact.phone}
-            </div>
-            
-            {/* Footer actions */}
-            <div className="flex gap-2 pt-2">
-              <Button size="sm" variant="default" onClick={() => onMove(prospect.id)} className="text-xs">
-                {moveLabel}
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => onRemove(prospect.id)} className="text-xs">
-                Remove
-              </Button>
-            </div>
-          </div>
-        </Card>
-      ))}
-      
-      {list.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground text-sm">
-          No prospects yet
+  const getCoverageColor = (coverage: number) => {
+    if (coverage >= 80) return 'bg-green-600/10 text-green-600';
+    if (coverage >= 60) return 'bg-amber-600/10 text-amber-600';
+    return 'bg-red-600/10 text-red-600';
+  };
+
+  const qualRate = prospects.length > 0 ? Math.round((qualified.length / (prospects.length + qualified.length + meetings.length)) * 100) : 0;
+  const bookRate = qualified.length > 0 ? Math.round((meetings.length / (qualified.length + meetings.length)) * 100) : 0;
+
+  // Render prospect cards with consistent design
+  const renderProspectCard = (prospect: Prospect, onQualify?: () => void, onBook?: () => void, onRemove?: () => void) => (
+    <Card key={prospect.id} className="rounded-xl ring-1 ring-border p-4">
+      <div className="space-y-2">
+        {/* Title */}
+        <h4 className="font-medium text-sm leading-tight">
+          {prospect.name} ({prospect.market_city}, {prospect.market_state})
+        </h4>
+        
+        {/* Outreach chips */}
+        <div className="flex gap-1">
+          <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.email === 'reached' ? 'bg-green-600/10 text-green-600' : 'bg-red-600/10 text-red-600'}`}>
+            email
+          </span>
+          <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.sms === 'reached' ? 'bg-green-600/10 text-green-600' : 'bg-red-600/10 text-red-600'}`}>
+            sms
+          </span>
+          <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.call === 'reached' ? 'bg-green-600/10 text-green-600' : 'bg-red-600/10 text-red-600'}`}>
+            call
+          </span>
+          <span className={`px-1.5 py-0.5 text-xs rounded ${prospect.outreach.vm === 'left' ? 'bg-muted text-muted-foreground' : 'bg-red-600/10 text-red-600'}`}>
+            vm
+          </span>
         </div>
-      )}
-    </div>
+        
+        {/* Meta row */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {prospect.price_psf && <span>${prospect.price_psf} PSF</span>}
+          {prospect.cap_rate && <span>{prospect.cap_rate.toFixed(1)}% Cap</span>}
+          {prospect.per_door && <span>${(prospect.per_door / 1000).toFixed(0)}k/door</span>}
+          {prospect.budget && <span>${(prospect.budget / 1000000).toFixed(1)}M</span>}
+          {prospect.build_year && <span>Built {prospect.build_year}</span>}
+        </div>
+        
+        {/* Flags */}
+        {prospect.flags.length > 0 && (
+          <div className="flex gap-1 flex-wrap">
+            {prospect.flags.map((flag, index) => (
+              <Badge key={index} variant="outline" className="text-xs px-1.5 py-0.5">
+                {flag}
+              </Badge>
+            ))}
+          </div>
+        )}
+        
+        {/* Contact */}
+        <div className="text-xs text-muted-foreground font-mono">
+          {prospect.contact.email} · {prospect.contact.phone}
+        </div>
+        
+        {/* Actions */}
+        <div className="flex gap-2 pt-1">
+          {onQualify && (
+            <Button size="sm" variant="outline" onClick={onQualify}>
+              Qualify
+            </Button>
+          )}
+          {onBook && (
+            <Button size="sm" variant="outline" onClick={onBook}>
+              Book
+            </Button>
+          )}
+          <Button size="sm" variant="ghost" onClick={onRemove}>
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+    </Card>
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Slim top bar */}
-      <div className="border-b border-border bg-card/50">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <button 
-            onClick={() => handleNavClick('product')}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft size={16} />
-            Back to site
-          </button>
-          <h1 className="text-xl font-medium">Live Demo</h1>
-          <div className="w-20"></div> {/* Spacer for centering */}
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="max-w-6xl mx-auto px-6 py-12 space-y-16">
-        
-        {/* Deal Finder Section */}
-        <section>
-          <div className="mb-8">
-            <h2 className="text-3xl font-medium mb-2">Deal Finder</h2>
-            <p className="text-muted-foreground">Parse investment criteria and extract key parameters</p>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center">
+          <div className="mr-4 flex">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => handleNavClick('')}
+              className="mr-6 flex items-center space-x-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Home</span>
+            </Button>
           </div>
-          
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Left: Input */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Investment Criteria</label>
-                <Textarea
-                  value={criteria}
-                  onChange={(e) => setCriteria(e.target.value)}
-                  placeholder="Type your criteria…"
-                  className="min-h-[120px]"
-                />
-              </div>
-              
-              <div className="flex gap-2">
-                <Button onClick={handleParse} disabled={!criteria.trim()}>
-                  Parse
-                </Button>
-                
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline">
-                      <Menu size={16} />
-                      Use example
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-80">
-                    {examples.map((example, index) => (
-                      <DropdownMenuItem 
-                        key={index}
-                        onClick={() => handleUseExample(example)}
-                        className="whitespace-normal p-3"
-                      >
-                        {example}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+          <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+            <nav className="flex items-center space-x-6">
+              <h1 className="text-lg font-semibold">Deal Finder Demo</h1>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="container max-w-7xl mx-auto py-6 space-y-8">
+        {/* Deal Finder Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Deal Finder</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Textarea
+              placeholder="Describe your buy-box criteria in natural language..."
+              value={criteria}
+              onChange={(e) => setCriteria(e.target.value)}
+              rows={3}
+            />
+            <div className="flex gap-2">
+              <Button onClick={handleParse} disabled={!criteria.trim()}>
+                Parse Criteria
+              </Button>
+              <Button variant="outline" onClick={handleReset}>
+                Reset
+              </Button>
             </div>
             
-            {/* Right: Parsed Results */}
-            <div>
-              {parsedData ? (
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      📋 Parsed Buy-Box
-                      <span className={`px-2 py-1 text-xs rounded ${parsedData.coverage_score >= 70 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}`}>
-                        Coverage: {parsedData.coverage_score}%
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {parsedData.coverage_score < 70 && (
-                      <div className="text-sm text-yellow-700 dark:text-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded">
-                        Add missing fields: {parsedData.missing_fields.join(', ')}
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div><span className="font-medium">Intent:</span> {parsedData.intent}</div>
-                      <div><span className="font-medium">Asset:</span> {parsedData.asset_type || 'Not specified'}</div>
-                      <div><span className="font-medium">Market:</span> {
-                        parsedData.market.city && parsedData.market.state ? `${parsedData.market.city}, ${parsedData.market.state}` :
-                        parsedData.market.metro ? parsedData.market.metro : 'Not specified'
-                      }</div>
-                      <div><span className="font-medium">Size:</span> {
-                        parsedData.size_range_sf ? `${parsedData.size_range_sf.min?.toLocaleString()}-${parsedData.size_range_sf.max?.toLocaleString()} SF` :
-                        parsedData.units_range ? `${parsedData.units_range.min}-${parsedData.units_range.max} units` : 'Not specified'
-                      }</div>
-                      <div><span className="font-medium">Price/Cap:</span> {
-                        parsedData.price_cap_band ? 
-                          (parsedData.price_cap_band.psf_min && parsedData.price_cap_band.psf_max ? `$${parsedData.price_cap_band.psf_min}-$${parsedData.price_cap_band.psf_max} PSF` :
-                           parsedData.price_cap_band.cap_min ? `Cap ≥ ${parsedData.price_cap_band.cap_min}%` :
-                           parsedData.price_cap_band.per_door_max ? `≤$${parsedData.price_cap_band.per_door_max.toLocaleString()}/door` : 'Specified') : 'Not specified'
-                      }</div>
-                      <div><span className="font-medium">Timing:</span> {
-                        parsedData.timing?.months_to_event ? `${parsedData.timing.months_to_event} months` : 'Not specified'
-                      }</div>
-                    </div>
-                    
-                    {(parsedData.flags.loan_maturing || parsedData.flags.owner_age_65_plus || parsedData.flags.off_market) && (
-                      <div className="pt-2 border-t">
-                        <span className="font-medium text-sm">Flags: </span>
-                        <div className="flex gap-1 mt-1">
-                          {parsedData.flags.loan_maturing && <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs rounded">Loan maturing</span>}
-                          {parsedData.flags.owner_age_65_plus && <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs rounded">Owner 65+</span>}
-                          {parsedData.flags.off_market && <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 text-xs rounded">Off-market</span>}
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="pt-4 border-t flex gap-2">
-                      <Button onClick={handleSendToCRM} className="flex-1">
-                        📤 Send to CRM
-                      </Button>
-                      <Button variant="outline" onClick={handleReset} className="flex-1">
-                        🔄 Reset
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="h-full flex items-center justify-center mt-6">
-                  <CardContent className="text-center text-muted-foreground">
-                    <p>Enter criteria above and click Parse to see extracted parameters</p>
-                  </CardContent>
-                </Card>
+            {/* Examples */}
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Try these examples:</p>
+              <div className="space-y-1">
+                <button
+                  onClick={() => setCriteria("Find industrial warehouses, 60k–120k SF, Atlanta, cap ≥ 6%, built after 1980")}
+                  className="block text-left text-sm text-primary hover:underline"
+                >
+                  • Find industrial warehouses, 60k–120k SF, Atlanta, cap ≥ 6%, built after 1980
+                </button>
+                <button
+                  onClick={() => setCriteria("18–22k SF retail for lease in Miami Beach, $180–$220 PSF")}
+                  className="block text-left text-sm text-primary hover:underline"
+                >
+                  • 18–22k SF retail for lease in Miami Beach, $180–$220 PSF
+                </button>
+                <button
+                  onClick={() => setCriteria("Dallas multifamily owners with loans maturing in 3–6 months, 50–150 units for refinance")}
+                  className="block text-left text-sm text-primary hover:underline"
+                >
+                  • Dallas multifamily owners with loans maturing in 3–6 months, 50–150 units for refinance
+                </button>
+                <button
+                  onClick={() => setCriteria("single family homes in SF area, between 2–3 million, owners above 54")}
+                  className="block text-left text-sm text-primary hover:underline"
+                >
+                  • single family homes in SF area, between 2–3 million, owners above 54
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Parsed Results */}
+        {parsedData && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Parsed Buy-Box</CardTitle>
+              <Badge className={getCoverageColor(parsedData.coverage)}>
+                Coverage: {parsedData.coverage}%
+              </Badge>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Intent:</span> {parsedData.intent || 'Not specified'}
+                </div>
+                <div>
+                  <span className="font-medium">Asset Type:</span> {parsedData.asset_type || 'Not specified'}
+                </div>
+                <div>
+                  <span className="font-medium">Market:</span> {parsedData.market.city ? `${parsedData.market.city}, ${parsedData.market.state}` : parsedData.market.metro || 'Not specified'}
+                </div>
+                <div>
+                  <span className="font-medium">Size (SF):</span> {parsedData.size_range_sf ? `${parsedData.size_range_sf.min?.toLocaleString()}–${parsedData.size_range_sf.max?.toLocaleString()} SF` : 'Not specified'}
+                </div>
+                <div>
+                  <span className="font-medium">Units:</span> {parsedData.units_range ? `${parsedData.units_range.min}–${parsedData.units_range.max}` : 'Not specified'}
+                </div>
+                <div>
+                  <span className="font-medium">Price/Cap:</span> {
+                    parsedData.price_cap_band ? 
+                      [
+                        parsedData.price_cap_band.psf_min && parsedData.price_cap_band.psf_max ? `$${parsedData.price_cap_band.psf_min}–$${parsedData.price_cap_band.psf_max} PSF` : null,
+                        parsedData.price_cap_band.cap_min ? `${parsedData.price_cap_band.cap_min}%+ Cap` : null,
+                        parsedData.price_cap_band.per_door_max ? `≤$${(parsedData.price_cap_band.per_door_max / 1000).toFixed(0)}k/door` : null,
+                        parsedData.price_cap_band.budget_min && parsedData.price_cap_band.budget_max ? `$${(parsedData.price_cap_band.budget_min / 1000000).toFixed(1)}–$${(parsedData.price_cap_band.budget_max / 1000000).toFixed(1)}M` : null
+                      ].filter(Boolean).join(', ') || 'Various criteria'
+                    : 'Not specified'
+                  }
+                </div>
+              </div>
+              
+              {parsedData.coverage < 60 && (
+                <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <p className="text-sm text-amber-800 dark:text-amber-200">
+                    Add market + size (or units) for accurate matches.
+                  </p>
+                </div>
               )}
-            </div>
-          </div>
-        </section>
-
-        {/* CRM Section */}
-        <section>
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-medium mb-2">CRM Pipeline</h2>
-              <p className="text-muted-foreground">Manage prospects through qualification to booking</p>
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleSimulate} 
-                disabled={isSimulating || (prospects.length === 0 && qualified.length === 0)}
-                variant="outline"
-              >
-                {isSimulating ? 'Simulating...' : 'Simulate'}
-              </Button>
-              <Button 
-                onClick={handleClearDemo}
-                disabled={prospects.length === 0 && qualified.length === 0 && meetings.length === 0}
-                variant="outline"
-              >
-                Clear demo
-              </Button>
-            </div>
-          </div>
-          
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Prospects Column */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h3 className="font-medium">Prospects</h3>
-                <Badge variant="secondary">{prospects.length}</Badge>
+              
+              <div className="flex gap-2 mt-4">
+                <Button 
+                  onClick={handleSendToCRM}
+                  disabled={parsedData.coverage < 60}
+                >
+                  Send to CRM
+                </Button>
               </div>
-              {renderProspectList(prospects, (id) => moveProspect(id, prospects, qualified, setProspects, setQualified), (id) => removeProspect(id, prospects, setProspects), "Qualify", "🎯")}
-            </div>
+            </CardContent>
+          </Card>
+        )}
 
-            {/* Qualified Targets Column */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h3 className="font-medium">Qualified Targets</h3>
-                <Badge variant="secondary">{qualified.length}</Badge>
+        {/* CRM Pipeline */}
+        {(prospects.length > 0 || qualified.length > 0 || meetings.length > 0) && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>CRM Pipeline</CardTitle>
+              <div className="flex gap-2">
+                <Badge variant="outline">Qual rate: {qualRate}%</Badge>
+                <Badge variant="outline">Book rate: {bookRate}%</Badge>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleSimulate}
+                  disabled={isSimulating || prospects.length === 0}
+                >
+                  {isSimulating ? 'Simulating...' : 'Simulate'}
+                </Button>
               </div>
-              {renderProspectList(qualified, (id) => moveProspect(id, qualified, meetings, setQualified, setMeetings), (id) => removeProspect(id, qualified, setQualified), "Book", "📅")}
-            </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Prospects */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium">Prospects ({prospects.length})</h3>
+                  </div>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {prospects.map((prospect) => 
+                      renderProspectCard(
+                        prospect,
+                        () => moveProspect(prospect.id, prospects, qualified, setProspects, setQualified),
+                        undefined,
+                        () => removeProspect(prospect.id, prospects, setProspects)
+                      )
+                    )}
+                  </div>
+                </div>
 
-            {/* Meetings Booked Column */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h3 className="font-medium">Meetings Booked</h3>
-                <Badge variant="secondary">{meetings.length}</Badge>
+                {/* Qualified Targets */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium">Qualified Targets ({qualified.length})</h3>
+                  </div>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {qualified.map((prospect) => 
+                      renderProspectCard(
+                        prospect,
+                        undefined,
+                        () => moveProspect(prospect.id, qualified, meetings, setQualified, setMeetings),
+                        () => removeProspect(prospect.id, qualified, setQualified)
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {/* Meetings Booked */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium">Meetings Booked ({meetings.length})</h3>
+                  </div>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {meetings.map((prospect) => 
+                      renderProspectCard(
+                        prospect,
+                        undefined,
+                        undefined,
+                        () => removeProspect(prospect.id, meetings, setMeetings)
+                      )
+                    )}
+                  </div>
+                </div>
               </div>
-              {renderProspectList(meetings, () => {}, (id) => removeProspect(id, meetings, setMeetings), "", "")}
-            </div>
-          </div>
-        </section>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
