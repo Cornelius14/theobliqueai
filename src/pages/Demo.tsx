@@ -5,21 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Menu, X, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-// Exact data model as specified
-type Parsed = {
-  intent: "acquisition" | "lease" | "refinance" | "title" | null,
-  asset_type: "industrial" | "warehouse" | "multifamily" | "retail" | "land" | "data center" | "single-family" | null,
-  market: { city: string|null, state: string|null, metro: string|null },
-  size_range_sf: { min?: number|null, max?: number|null } | null,
-  units_range: { min?: number|null, max?: number|null } | null,
-  price_cap_band: { psf_min?: number|null, psf_max?: number|null, cap_min?: number|null, cap_max?: number|null, per_door_max?: number|null, budget_min?: number|null, budget_max?: number|null } | null,
-  build_year: { after?: number|null, before?: number|null } | null,
-  owner_age_min?: number|null,
-  timing: { months_to_event?: number|null } | null,
-  flags: { loan_maturing?: boolean, owner_age_65_plus?: boolean, off_market?: boolean },
-  coverage: number
-}
+import { parseBuyBoxLLM } from '@/lib/apiClient';
+import { parseBuyBoxLocal, coverageScore, validateLLMResponse, type Parsed } from '@/lib/localParser';
 
 interface Prospect {
   id: string;
@@ -48,243 +35,31 @@ interface Prospect {
   };
 }
 
+interface ParsedWithCoverage extends Parsed {
+  coverage: number;
+}
+
 const Demo = () => {
   const [criteria, setCriteria] = useState('');
-  const [parsedData, setParsedData] = useState<Parsed | null>(null);
+  const [parsedData, setParsedData] = useState<ParsedWithCoverage | null>(null);
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [qualified, setQualified] = useState<Prospect[]>([]);
   const [meetings, setMeetings] = useState<Prospect[]>([]);
   const [isSimulating, setIsSimulating] = useState(false);
   const { toast } = useToast();
 
-  // Robust rule-based parser
-  const parseCriteria = (text: string): Parsed => {
-    const lower = text.toLowerCase();
-    let coverage = 0;
-
-    // Synonyms
-    const synonyms = {
-      asset_type: {
-        industrial: ['industrial', 'warehouse', 'logistics', 'plant'],
-        warehouse: ['warehouse', 'industrial', 'logistics', 'plant'],
-        multifamily: ['multifamily', 'apartments', 'units'],
-        retail: ['retail', 'storefront', 'shop'],
-        'single-family': ['single-family', 'sfh', 'single family', 'house', 'houses'],
-        'data center': ['data center', 'datacenter'],
-        land: ['land']
-      },
-      intent: {
-        acquisition: ['acquire', 'buy', 'purchase', 'looking to buy'],
-        lease: ['lease', 'for lease', 'rent'],
-        refinance: ['refi', 'refinance'],
-        title: ['title', 'escrow', 'deed', 'closing']
-      }
+  // Asset type emojis for visual consistency  
+  const getAssetEmoji = (assetType: string) => {
+    const emojis: Record<string, string> = {
+      'industrial': '🏭',
+      'warehouse': '🏭', 
+      'multifamily': '🏘️',
+      'retail': '🏢',
+      'single-family': '🏠',
+      'land': '🏞️',
+      'data center': '🏢'
     };
-
-    // Intent detection
-    let intent: Parsed["intent"] = null;
-    for (const [key, values] of Object.entries(synonyms.intent)) {
-      if (values.some(v => lower.includes(v))) {
-        intent = key as Parsed["intent"];
-        coverage += 20;
-        break;
-      }
-    }
-
-    // Asset type detection
-    let asset_type: Parsed["asset_type"] = null;
-    for (const [key, values] of Object.entries(synonyms.asset_type)) {
-      if (values.some(v => lower.includes(v))) {
-        asset_type = key as Parsed["asset_type"];
-        coverage += 20;
-        break;
-      }
-    }
-
-    // Location extraction
-    const market: Parsed["market"] = { city: null, state: null, metro: null };
-    
-    // City, State patterns
-    const cityStatePattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*),?\s*([A-Z]{2})\b/;
-    const cityStateMatch = text.match(cityStatePattern);
-    
-    if (cityStateMatch) {
-      market.city = cityStateMatch[1];
-      market.state = cityStateMatch[2];
-      coverage += 25;
-    } else {
-      // Metro detection
-      const metros = {
-        'atlanta': { city: 'Atlanta', state: 'GA', metro: 'Atlanta' },
-        'dallas': { city: 'Dallas', state: 'TX', metro: 'Dallas' },
-        'miami': { city: 'Miami', state: 'FL', metro: 'Miami' },
-        'nashville': { city: 'Nashville', state: 'TN', metro: 'Nashville' },
-        'charlotte': { city: 'Charlotte', state: 'NC', metro: 'Charlotte' },
-        'nyc': { city: 'New York', state: 'NY', metro: 'NYC' },
-        'new york': { city: 'New York', state: 'NY', metro: 'NYC' },
-        'sf': { city: 'San Francisco', state: 'CA', metro: 'SF Bay Area' },
-        'san francisco': { city: 'San Francisco', state: 'CA', metro: 'SF Bay Area' },
-        'sf bay area': { city: 'San Francisco', state: 'CA', metro: 'SF Bay Area' },
-        'bay area': { city: 'San Francisco', state: 'CA', metro: 'SF Bay Area' }
-      };
-      
-      for (const [metro, data] of Object.entries(metros)) {
-        if (lower.includes(metro)) {
-          market.city = data.city;
-          market.state = data.state;
-          market.metro = data.metro;
-          coverage += 25;
-          break;
-        }
-      }
-    }
-
-    // Size/units extraction with k normalization
-    let size_range_sf: Parsed["size_range_sf"] = null;
-    let units_range: Parsed["units_range"] = null;
-
-    const normalize = (str: string): number => {
-      const cleaned = str.replace(/,/g, '');
-      if (cleaned.endsWith('k')) {
-        return parseInt(cleaned.slice(0, -1)) * 1000;
-      }
-      return parseInt(cleaned);
-    };
-
-    // SF patterns
-    const sfRangePattern = /(\d{1,3}(?:,\d{3})*|\d+k?)\s*[-–—]\s*(\d{1,3}(?:,\d{3})*|\d+k?)\s*(?:sf|sq\.?\s*ft|square\s*feet)/i;
-    const sfSinglePattern = /(\d{1,3}(?:,\d{3})*|\d+k?)\s*(?:sf|sq\.?\s*ft|square\s*feet)/i;
-    
-    const sfRangeMatch = text.match(sfRangePattern);
-    const sfSingleMatch = text.match(sfSinglePattern);
-    
-    if (sfRangeMatch) {
-      size_range_sf = {
-        min: normalize(sfRangeMatch[1]),
-        max: normalize(sfRangeMatch[2])
-      };
-      coverage += 25;
-    } else if (sfSingleMatch && !sfRangeMatch) {
-      const size = normalize(sfSingleMatch[1]);
-      size_range_sf = { min: size, max: size };
-      coverage += 25;
-    }
-
-    // Units patterns
-    const unitsRangePattern = /(\d{1,3})\s*[-–—]\s*(\d{1,3})\s*units/i;
-    const unitsMatch = text.match(unitsRangePattern);
-    
-    if (unitsMatch) {
-      units_range = {
-        min: parseInt(unitsMatch[1]),
-        max: parseInt(unitsMatch[2])
-      };
-      coverage += 25;
-    }
-
-    // Price/cap/budget extraction
-    let price_cap_band: Parsed["price_cap_band"] = null;
-
-    // PSF patterns
-    const psfRangePattern = /\$?(\d+)\s*[-–—]\s*\$?(\d+)\s*(?:psf|per\s*sf)/i;
-    const psfMatch = text.match(psfRangePattern);
-
-    // CAP patterns
-    const capPattern = /cap\s*[≥>=]\s*(\d+(?:\.\d+)?)%/i;
-    const capRangePattern = /cap\s*(\d+(?:\.\d+)?)\s*[-–—]\s*(\d+(?:\.\d+)?)%/i;
-    const capMatch = text.match(capPattern);
-    const capRangeMatch = text.match(capRangePattern);
-
-    // Per door patterns
-    const perDoorPattern = /[≤<=]?\s*\$?(\d{2,4})k\/door/i;
-    const perDoorMatch = text.match(perDoorPattern);
-
-    // Budget patterns
-    const budgetPattern = /between\s*(\d+)\s*[-–—]\s*(\d+)\s*million/i;
-    const budgetMatch = text.match(budgetPattern);
-
-    if (psfMatch || capMatch || capRangeMatch || perDoorMatch || budgetMatch) {
-      price_cap_band = {};
-      
-      if (psfMatch) {
-        price_cap_band.psf_min = parseInt(psfMatch[1]);
-        price_cap_band.psf_max = parseInt(psfMatch[2]);
-      }
-      
-      if (capMatch) {
-        price_cap_band.cap_min = parseFloat(capMatch[1]);
-      }
-      
-      if (capRangeMatch) {
-        price_cap_band.cap_min = parseFloat(capRangeMatch[1]);
-        price_cap_band.cap_max = parseFloat(capRangeMatch[2]);
-      }
-      
-      if (perDoorMatch) {
-        price_cap_band.per_door_max = parseInt(perDoorMatch[1]) * 1000;
-      }
-      
-      if (budgetMatch) {
-        price_cap_band.budget_min = parseInt(budgetMatch[1]) * 1000000;
-        price_cap_band.budget_max = parseInt(budgetMatch[2]) * 1000000;
-      }
-      
-      coverage += 10;
-    }
-
-    // Build year extraction
-    let build_year: Parsed["build_year"] = null;
-    const buildRangePattern = /(?:built\s*)?(\d{4})\s*[-–—]\s*(\d{4})/i;
-    const buildAfterPattern = /(?:built\s*|after\s*)(\d{4})/i;
-    
-    const buildRangeMatch = text.match(buildRangePattern);
-    const buildAfterMatch = text.match(buildAfterPattern);
-    
-    if (buildRangeMatch) {
-      build_year = {
-        after: parseInt(buildRangeMatch[1]),
-        before: parseInt(buildRangeMatch[2])
-      };
-    } else if (buildAfterMatch) {
-      build_year = { after: parseInt(buildAfterMatch[1]) };
-    }
-
-    // Owner age extraction
-    let owner_age_min: number | null = null;
-    const ownerAgePattern = /owners?\s*(?:above|over|\+)\s*(\d+)/i;
-    const ownerAgeMatch = text.match(ownerAgePattern);
-    if (ownerAgeMatch) {
-      owner_age_min = parseInt(ownerAgeMatch[1]);
-    }
-
-    // Timing extraction
-    let timing: Parsed["timing"] = null;
-    const timingPattern = /(?:maturing|closing|need)\s*in\s*(\d+)(?:\s*[-–—]\s*(\d+))?\s*months?/i;
-    const timingMatch = text.match(timingPattern);
-    if (timingMatch) {
-      timing = { months_to_event: parseInt(timingMatch[1]) };
-    }
-
-    // Flags detection
-    const flags: Parsed["flags"] = {
-      loan_maturing: /loan[s]?\s*(?:matur|due)/i.test(text),
-      owner_age_65_plus: owner_age_min ? owner_age_min >= 65 : /owner[s]?\s*(?:above|over|\+)\s*65|65\+?\s*owner/i.test(text),
-      off_market: /off[-\s]?market/i.test(text)
-    };
-
-    return {
-      intent,
-      asset_type,
-      market,
-      size_range_sf,
-      units_range,
-      price_cap_band,
-      build_year,
-      owner_age_min,
-      timing,
-      flags,
-      coverage: Math.min(100, coverage)
-    };
+    return emojis[assetType] || '🏢';
   };
 
   // Generate contact information
@@ -362,25 +137,28 @@ const Demo = () => {
       let units: number | undefined;
       let name = '';
       
-      // Generate size/units within STRICT constraints
-      if (parsedData.size_range_sf) {
-        const min = parsedData.size_range_sf.min || 10000;
-        const max = parsedData.size_range_sf.max || min;
-        size_sf = Math.floor(Math.random() * (max - min + 1)) + min;
-        
-        const assetLabel = parsedData.asset_type === 'warehouse' ? 'Industrial' : 
-                          parsedData.asset_type?.charAt(0).toUpperCase() + parsedData.asset_type?.slice(1);
-        name = `${assetLabel} — ${(size_sf / 1000).toFixed(0)}k SF`;
-      } else if (parsedData.units_range) {
-        const min = parsedData.units_range.min || 20;
-        const max = parsedData.units_range.max || min;
-        units = Math.floor(Math.random() * (max - min + 1)) + min;
-        name = `Multifamily — ${units} units`;
-      } else {
-        // Default fallback
-        size_sf = 50000;
-        name = `${parsedData.asset_type || 'Industrial'} — 50k SF`;
-      }
+        // Generate size/units within STRICT constraints
+        if (parsedData.size_range_sf) {
+          const min = parsedData.size_range_sf.min || 10000;
+          const max = parsedData.size_range_sf.max || min;
+          size_sf = Math.floor(Math.random() * (max - min + 1)) + min;
+          
+          const assetLabel = parsedData.asset_type === 'warehouse' ? 'Industrial' : 
+                            parsedData.asset_type?.charAt(0).toUpperCase() + parsedData.asset_type?.slice(1);
+          const emoji = getAssetEmoji(parsedData.asset_type || 'industrial');
+          name = `${emoji} ${assetLabel} — ${(size_sf / 1000).toFixed(0)}k SF`;
+        } else if (parsedData.units_range) {
+          const min = parsedData.units_range.min || 20;
+          const max = parsedData.units_range.max || min;
+          units = Math.floor(Math.random() * (max - min + 1)) + min;
+          const emoji = getAssetEmoji('multifamily');
+          name = `${emoji} Multifamily — ${units} units`;
+        } else {
+          // Default fallback
+          size_sf = 50000;
+          const emoji = getAssetEmoji(parsedData.asset_type || 'industrial');
+          name = `${emoji} ${parsedData.asset_type || 'Industrial'} — 50k SF`;
+        }
       
       // Generate pricing within constraints
       let price_psf: number | undefined;
@@ -456,36 +234,32 @@ const Demo = () => {
 
     try {
       // Try LLM endpoint first
-      const response = await fetch('/api/parseBuyBox', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: criteria })
-      });
-
-      if (response.ok) {
-        const llmResult = await response.json();
-        // Validate the result has required structure
-        if (llmResult && typeof llmResult.coverage === 'number') {
-          setParsedData(llmResult);
-          return;
-        }
+      const llmResult = await parseBuyBoxLLM(criteria);
+      
+      // Validate LLM response structure
+      if (validateLLMResponse(llmResult)) {
+        const coverage = coverageScore(llmResult);
+        setParsedData({ ...llmResult, coverage });
+        return;
       }
     } catch (error) {
       console.log('LLM endpoint unavailable, using local parser');
     }
 
     // Fallback to local parser
-    const parsed = parseCriteria(criteria);
-    setParsedData(parsed);
+    const parsed = parseBuyBoxLocal(criteria);
+    const coverage = coverageScore(parsed);
+    setParsedData({ ...parsed, coverage });
   };
 
   const handleSendToCRM = () => {
     if (!parsedData) return;
     
-    if (parsedData.coverage < 60) {
+    if (parsedData.coverage && parsedData.coverage < 60) {
       toast({
-        title: "Add market + size to generate accurate prospects.",
-        variant: "destructive"
+        title: "Missing criteria",
+        description: "Add market + size (or units) for accurate matches.",
+        variant: "destructive",
       });
       return;
     }
@@ -740,8 +514,8 @@ const Demo = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Parsed Buy-Box</CardTitle>
-              <Badge className={getCoverageColor(parsedData.coverage)}>
-                Coverage: {parsedData.coverage}%
+              <Badge className={getCoverageColor(parsedData.coverage || 0)}>
+                Coverage: {parsedData.coverage || 0}%
               </Badge>
             </CardHeader>
             <CardContent>
@@ -775,7 +549,7 @@ const Demo = () => {
                 </div>
               </div>
               
-              {parsedData.coverage < 60 && (
+              {parsedData.coverage && parsedData.coverage < 60 && (
                 <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                   <p className="text-sm text-amber-800 dark:text-amber-200">
                     Add market + size (or units) for accurate matches.
@@ -786,7 +560,7 @@ const Demo = () => {
               <div className="flex gap-2 mt-4">
                 <Button 
                   onClick={handleSendToCRM}
-                  disabled={parsedData.coverage < 60}
+                  disabled={parsedData.coverage ? parsedData.coverage < 60 : false}
                 >
                   Send to CRM
                 </Button>
