@@ -20,46 +20,57 @@ const Demo = () => {
   const [crmProspects, setCrmProspects] = useState<any[]>([]);
   const [qualifiedTargets, setQualifiedTargets] = useState<any[]>([]);
   const [meetingsBooked, setMeetingsBooked] = useState<any[]>([]);
-  const [status, setStatus] = useState<'idle' | 'llm' | 'fallback' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'working' | 'error'>('idle');
   const [coverage, setCoverage] = useState(0);
   const [blocked, setBlocked] = useState(false);
   const [verified, setVerified] = useState(false);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleParse = async () => {
-    if (!criteria.trim()) return;
+  const PARSER_API = "https://mandate-parser-brenertomer.replit.app/parseBuyBox";
 
-    setStatus('llm');
+  const handleParse = async () => {
+    console.log('[DealFinder] Parse clicked'); // visible proof
+    if (!criteria.trim()) return;
+    
+    setErrMsg(null);
+    setStatus('working');
     setVerified(false);
 
     try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 15000); // 15s timeout
-
-      const raw = await parseBuyBoxRemote(criteria, ctrl.signal);
-      clearTimeout(t);
-
-      // If you already have normalizeParsed/coverageScore helpers, keep using them:
-      const parsed = (typeof normalizeParsed === "function") ? normalizeParsed(raw) : raw;
-      const coverage = (typeof coverageScore === "function") ? coverageScore(parsed) : 100;
-
-      setParsedBuyBox(parsed);
-      setCoverage(coverage);
-
+      const res = await fetch(PARSER_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: criteria })
+      });
+      
+      if (!res.ok) {
+        const t = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status} ${t}`);
+      }
+      
+      const parsed = await res.json();
+      console.log('[DealFinder] Parsed result:', parsed);
+      
+      // Use existing normalize + coverage functions
+      const normalizedParsed = (typeof normalizeParsed === "function") ? normalizeParsed(parsed) : parsed;
+      const cov = (typeof coverageScore === "function") ? coverageScore(normalizedParsed) : 100;
+      
+      setParsedBuyBox(normalizedParsed);
+      setCoverage(cov);
+      
       // Post-parse gating (soft): never block the network call again.
-      const hasMarket =
-        !!(parsed?.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
-
-      setBlocked(!hasMarket || coverage < 30); // still let user proceed, just warn
+      const hasMarket = !!(normalizedParsed?.market && (normalizedParsed.market.city || normalizedParsed.market.metro || normalizedParsed.market.state || normalizedParsed.market.country));
+      setBlocked(!hasMarket || cov < 30);
       
       // Set for QA inspection
-      (window as any).__parsed = parsed;
-    } catch (error: any) {
-      console.error('LLM parser error:', error?.message || error);
-      setStatus('error');
-      setTimeout(() => setStatus('idle'), 3000);
-    } finally {
+      (window as any).__parsed = normalizedParsed;
       setStatus('idle');
+      
+    } catch (error: any) {
+      console.error('[DealFinder] LLM fetch failed:', error?.message || error);
+      setErrMsg('Couldn\'t reach the parser. Try again in a moment.');
+      setStatus('error');
     }
   };
 
@@ -274,36 +285,42 @@ const Demo = () => {
             <CardTitle>Deal Finder</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Textarea
-              placeholder="Describe your buy-box criteria in natural language..."
-              value={criteria}
-              onChange={(e) => setCriteria(e.target.value)}
-              rows={3}
-            />
-            <div className="flex gap-2 items-center">
-              <Button onClick={handleParse} disabled={!criteria.trim()}>
-                Parse
-              </Button>
-              {status !== 'idle' && (
-                <Badge variant={status === 'llm' ? 'default' : status === 'fallback' ? 'secondary' : 'destructive'}>
-                  {status === 'llm' && 'Parsing with LLM…'}
-                  {status === 'fallback' && 'LLM unavailable → local parser'}
-                  {status === 'error' && 'Parse error'}
-                </Badge>
-              )}
-              <Button variant="outline" onClick={() => { 
-                setCriteria(''); 
-                setParsedBuyBox(null); 
-                setVerified(false); 
-                setCrmProspects([]); 
-                setQualifiedTargets([]); 
-                setMeetingsBooked([]); 
-                setBlocked(false);
-                setCoverage(0);
-              }}>
-                Reset
-              </Button>
-            </div>
+            <form onSubmit={(e) => e.preventDefault()}>
+              <Textarea
+                placeholder="Describe your buy-box criteria in natural language..."
+                value={criteria}
+                onChange={(e) => setCriteria(e.target.value)}
+                rows={3}
+              />
+              <div className="flex gap-2 items-center mt-4">
+                <button 
+                  type="button" 
+                  id="df-parse-btn" 
+                  onClick={handleParse} 
+                  disabled={!criteria.trim()}
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+                  aria-label="Parse Criteria"
+                >
+                  Parse Criteria
+                </button>
+                {status === 'working' && <div className="text-xs opacity-70">Parsing…</div>}
+                {status === 'error' && <div className="text-xs text-red-400">{errMsg}</div>}
+                <Button variant="outline" onClick={() => { 
+                  setCriteria(''); 
+                  setParsedBuyBox(null); 
+                  setVerified(false); 
+                  setCrmProspects([]); 
+                  setQualifiedTargets([]); 
+                  setMeetingsBooked([]); 
+                  setBlocked(false);
+                  setCoverage(0);
+                  setErrMsg(null);
+                  setStatus('idle');
+                }}>
+                  Reset
+                </Button>
+              </div>
+            </form>
             
             {/* Examples */}
             <div className="space-y-2">
