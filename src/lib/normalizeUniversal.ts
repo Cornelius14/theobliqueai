@@ -1,207 +1,108 @@
-import { mapIntentFromText, type UniversalIntent } from './intentTaxonomy';
+import { UniversalIntent, mapIntentFromText } from "./taxonomy";
+import { resolveMarket } from "./marketGazetteer";
 
 export type { UniversalIntent };
-import { toNumber } from './normalize';
 
-export interface UniversalMandate {
+export type UniversalParsed = {
   intent: UniversalIntent;
-  role?: string;
-  instrument?: string;
-  asset_type?: string;
-  market?: {
-    city?: string;
-    state?: string;
-    metro?: string;
-    country?: string;
-  };
-  size_sf?: {
-    min?: number;
-    max?: number;
-  };
-  units?: {
-    min?: number;
-    max?: number;
-  };
-  budget?: {
-    min?: number;
-    max?: number;
-  };
-  cap_rate?: {
-    min?: number;
-    max?: number;
-  };
-  psf?: {
-    min?: number;
-    max?: number;
-  };
-  build_year?: {
-    after?: number;
-    before?: number;
-  };
-  timing?: {
-    months_to_event?: number;
-  };
-  distress?: {
-    default?: boolean;
-    maturity?: boolean;
-    foreclosure?: boolean;
-  };
+  role: "buy_side"|"sell_side"|"borrower"|"lender"|"tenant"|"landlord"|"sponsor"|"investor"|"other";
+  asset_type?: string|null;
+  market?: { city?: string|null; state?: string|null; metro?: string|null; country?: string|null }|null;
+  units?: { min?: number|null; max?: number|null }|null;
+  size_sf?: { min?: number|null; max?: number|null }|null;
+  acres?: { min?: number|null; max?: number|null }|null;
+  budget?: { min?: number|null; max?: number|null }|null;
+  cap_rate?: { min?: number|null; max?: number|null }|null;
+  psf?: { min?: number|null; max?: number|null }|null;
+  build_year?: { after?: number|null; before?: number|null }|null;
+  timing?: { months_to_event?: number|null }|null;
+  constraints?: string[];
+  red_flags?: string[];
   keywords?: string[];
-}
+  confidence?: Record<string, number>;
+  missing_reasons?: Record<string, string>;
+};
 
-function extractRole(text: string): string | undefined {
-  const t = text.toLowerCase();
-  if (t.includes('borrower') || t.includes('buyer')) return 'buy_side';
-  if (t.includes('lender') || t.includes('seller')) return 'sell_side';
-  if (t.includes('tenant')) return 'tenant';
-  if (t.includes('landlord')) return 'landlord';
-  if (t.includes('sponsor')) return 'sponsor';
-  return undefined;
-}
+const toNum = (v:any)=> (typeof v==='number' && isFinite(v)) ? v : null;
 
-function extractTiming(text: string): { months_to_event?: number } | undefined {
-  const t = text.toLowerCase();
-  
-  // Match patterns like "6 months", "3-6 months", "matur in 6 months"
-  const monthsMatch = t.match(/(\d+)(?:\s*-\s*\d+)?\s*months?/);
-  if (monthsMatch) {
-    return { months_to_event: parseInt(monthsMatch[1]) };
-  }
-  
-  // Match "45 days" and convert to months
-  const daysMatch = t.match(/(\d+)\s*days?/);
-  if (daysMatch) {
-    const days = parseInt(daysMatch[1]);
-    return { months_to_event: Math.round(days / 30 * 10) / 10 }; // Convert to months, round to 1 decimal
-  }
-  
-  return undefined;
-}
+export function normalizeUniversal(raw:any, original:string): UniversalParsed {
+  const text = String(original||"");
+  // 1) intent: pick the MORE SPECIFIC of (LLM intent vs text-mapped intent)
+  const llmIntent = (raw?.intent||"").toString() as UniversalIntent;
+  const textIntent = mapIntentFromText(text);
+  const intent: UniversalIntent =
+    (llmIntent === "lease_agreement" && textIntent === "lease_surrender") ? "lease_surrender"
+    : (textIntent !== "other" ? textIntent : (llmIntent || "other"));
 
-function extractDistress(text: string): { default?: boolean; maturity?: boolean; foreclosure?: boolean } | undefined {
-  const t = text.toLowerCase();
-  const distress: any = {};
-  
-  if (t.includes('default') || t.includes('workout')) distress.default = true;
-  if (t.includes('matur') || t.includes('refinanc')) distress.maturity = true;
-  if (t.includes('foreclos') || t.includes('distress')) distress.foreclosure = true;
-  
-  return Object.keys(distress).length > 0 ? distress : undefined;
-}
+  // 2) market: prefer LLM, else resolve "city area / near city"
+  const market = raw?.market ?? resolveMarket(text) ?? null;
 
-function extractKeywords(text: string): string[] {
-  const keywords: string[] = [];
-  const t = text.toLowerCase();
-  
-  // Common real estate keywords
-  const patterns = [
-    'cap rate', 'noi', 'dscr', 'ltv', 'irr', 'cash flow',
-    'triple net', 'nnn', 'gross lease', 'cam', 'ti allowance',
-    'work letter', 'percentage rent', 'escalation',
-    'construction', 'development', 'ground lease',
-    'refinance', 'cash out', 'mezzanine', 'preferred equity',
-    '1031', 'tax credit', 'lihtc', 'historic',
-    'distressed', 'workout', 'foreclosure', 'bankruptcy'
-  ];
-  
-  patterns.forEach(pattern => {
-    if (t.includes(pattern)) keywords.push(pattern);
-  });
-  
-  return keywords;
-}
+  // 3) units/size ranges (15–20 units, 20k–40k sf, etc.)
+  const u = /(\d{1,3})\s*[-–]\s*(\d{1,3})\s*units?/i.exec(text);
+  const s = /(\d{1,3}(?:,\d{3})?)(?:\s*(?:k|K))?\s*[-–]\s*(\d{1,3}(?:,\d{3})?)(?:\s*(?:k|K))?\s*(?:sf|sq\s*ft)/i.exec(text);
+  const units = raw?.units ?? (u ? { min: +u[1], max: +u[2] } : null);
+  const size_sf = raw?.size_range_sf ?? (s ? {
+    min: +(s[1].replace(/,/g,"") + (/\bk\b/i.test(s[0]) ? "000" : "")),
+    max: +(s[2].replace(/,/g,"") + (/\bk\b/i.test(s[0]) ? "000" : "")),
+  } : null);
 
-export function normalizeUniversal(parsed: any, originalText: string): UniversalMandate {
-  const result: UniversalMandate = {
-    intent: parsed?.intent ? mapIntentFromText(parsed.intent) : mapIntentFromText(originalText),
-    keywords: extractKeywords(originalText)
+  // 4) role inference
+  let role: UniversalParsed["role"] = "other";
+  const tl = text.toLowerCase();
+  if (intent === "lease_surrender") role = "tenant";
+  else if (/borrower|refi|refinance/.test(tl)) role = "borrower";
+  else if (/lender/.test(tl)) role = "lender";
+  else if (/buy|acquire|invest/.test(tl)) role = "buy_side";
+  else if (/sell|disposition/.test(tl)) role = "sell_side";
+  else if (/tenant/.test(tl)) role = "tenant";
+  else if (/landlord|owner/.test(tl)) role = "landlord";
+
+  // 5) asset type (keep LLM if present, else light inference)
+  const asset = raw?.asset_type
+    ?? (/\bwarehouse|industrial\b/i.test(tl) ? "industrial"
+      : /\bmultifamily|apartment\b/i.test(tl) ? "multifamily"
+      : /\boffice\b/i.test(tl) ? "office"
+      : /\bretail\b/i.test(tl) ? "retail"
+      : /\bland\b/i.test(tl) ? "land"
+      : null);
+
+  // 6) build reasons / confidence (minimal)
+  const missing: Record<string,string> = {};
+  if (!market) missing.market = "City/metro not explicit (e.g., 'Boston area')";
+  if (!units && !size_sf) missing.size = "Size/units not specified";
+  if (!asset) missing.asset_type = "Asset type not explicit";
+
+  return {
+    intent,
+    role,
+    asset_type: asset,
+    market,
+    units,
+    size_sf,
+    acres: raw?.acres ?? null,
+    budget: raw?.budget ?? raw?.price ?? null,
+    cap_rate: raw?.cap_rate ?? null,
+    psf: raw?.psf ?? null,
+    build_year: raw?.build_year ?? null,
+    timing: raw?.timing ?? null,
+    constraints: raw?.constraints ?? [],
+    red_flags: raw?.red_flags ?? [],
+    keywords: raw?.keywords ?? [],
+    confidence: raw?.confidence ?? {},
+    missing_reasons: missing,
   };
-  
-  // Extract role
-  result.role = parsed?.role || extractRole(originalText);
-  
-  // Extract timing
-  result.timing = parsed?.timing || extractTiming(originalText);
-  
-  // Extract distress indicators
-  result.distress = parsed?.distress || extractDistress(originalText);
-  
-  // Map existing fields with fallbacks
-  result.asset_type = parsed?.asset_type || null;
-  
-  // Market
-  if (parsed?.market || originalText) {
-    const market = parsed?.market || {};
-    result.market = {
-      city: market.city || null,
-      state: market.state || null,
-      metro: market.metro || null,
-      country: market.country || null
-    };
-  }
-  
-  // Size ranges
-  if (parsed?.size_range_sf) {
-    result.size_sf = {
-      min: toNumber(parsed.size_range_sf.min),
-      max: toNumber(parsed.size_range_sf.max)
-    };
-  }
-  
-  if (parsed?.units_range) {
-    result.units = {
-      min: toNumber(parsed.units_range.min),
-      max: toNumber(parsed.units_range.max)
-    };
-  }
-  
-  // Financial ranges
-  if (parsed?.price_cap_band) {
-    const pcb = parsed.price_cap_band;
-    
-    if (pcb.budget_min || pcb.budget_max) {
-      result.budget = {
-        min: toNumber(pcb.budget_min),
-        max: toNumber(pcb.budget_max)
-      };
-    }
-    
-    if (pcb.cap_min || pcb.cap_max) {
-      result.cap_rate = {
-        min: toNumber(pcb.cap_min),
-        max: toNumber(pcb.cap_max)
-      };
-    }
-    
-    if (pcb.psf_min || pcb.psf_max) {
-      result.psf = {
-        min: toNumber(pcb.psf_min),
-        max: toNumber(pcb.psf_max)
-      };
-    }
-  }
-  
-  // Build year
-  if (parsed?.build_year) {
-    result.build_year = {
-      after: toNumber(parsed.build_year.after),
-      before: toNumber(parsed.build_year.before)
-    };
-  }
-  
-  return result;
 }
 
-export function computeCoverage(mandate: UniversalMandate): number {
+export function computeCoverage(parsed: UniversalParsed): number {
   let score = 0;
   
-  if (mandate.intent && mandate.intent !== 'other') score += 20;
-  if (mandate.asset_type) score += 15;
-  if (mandate.market && (mandate.market.city || mandate.market.metro || mandate.market.state)) score += 20;
-  if (mandate.size_sf?.min || mandate.size_sf?.max || mandate.units?.min || mandate.units?.max) score += 15;
-  if (mandate.budget?.min || mandate.budget?.max || mandate.cap_rate?.min || mandate.psf?.min) score += 15;
-  if (mandate.timing?.months_to_event) score += 10;
-  if (mandate.role) score += 5;
+  if (parsed.intent && parsed.intent !== 'other') score += 20;
+  if (parsed.asset_type) score += 15;
+  if (parsed.market && (parsed.market.city || parsed.market.metro || parsed.market.state)) score += 20;
+  if (parsed.size_sf?.min || parsed.size_sf?.max || parsed.units?.min || parsed.units?.max) score += 15;
+  if (parsed.budget?.min || parsed.budget?.max || parsed.cap_rate?.min || parsed.psf?.min) score += 15;
+  if (parsed.timing?.months_to_event) score += 10;
+  if (parsed.role) score += 5;
   
   return Math.min(100, score);
 }

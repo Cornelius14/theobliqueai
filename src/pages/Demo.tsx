@@ -10,14 +10,14 @@ import { normalizeParsed, coverageScore } from '@/lib/normalize';
 import { quickExtract } from '@/lib/quickExtract';
 import { seedProspects } from '@/lib/seedCRM';
 import { type Parsed } from '@/lib/llmClient';
-import { normalizeUniversal, computeCoverage, type UniversalMandate } from '@/lib/normalizeUniversal';
-import { generateProspects } from '@/lib/generateProspects';
+import { normalizeUniversal, computeCoverage, type UniversalParsed } from '@/lib/normalizeUniversal';
+import { synthProspects } from '@/lib/prospectSynth';
 
 // Using Prospect type from synth.ts instead of local interface
 
 const Demo = () => {
   const [criteria, setCriteria] = useState('');
-  const [parsedBuyBox, setParsedBuyBox] = useState<UniversalMandate | null>(null);
+  const [parsedBuyBox, setParsedBuyBox] = useState<UniversalParsed | null>(null);
   const [crmProspects, setCrmProspects] = useState<any[]>([]);
   const [qualifiedTargets, setQualifiedTargets] = useState<any[]>([]);
   const [meetingsBooked, setMeetingsBooked] = useState<any[]>([]);
@@ -62,7 +62,7 @@ const Demo = () => {
       setCoverage(cov);
       
       // Generate intent-aware CRM cards
-      const cards = generateProspects(parsed, criteria, 12);
+      const cards = synthProspects(parsed, criteria, 12);
       setCrmProspects(cards);
       
       // Post-parse gating (soft)
@@ -95,7 +95,7 @@ const Demo = () => {
         setCoverage(cov);
         
         // Generate intent-aware CRM cards  
-        const cards = generateProspects(parsed, criteria, 12);
+        const cards = synthProspects(parsed, criteria, 12);
         setCrmProspects(cards);
         
         const hasMarket = !!(parsed?.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
@@ -144,7 +144,7 @@ const Demo = () => {
     }
   };
 
-  const generateBuyBoxSummary = (parsed: UniversalMandate): string => {
+  const generateBuyBoxSummary = (parsed: UniversalParsed): string => {
     const parts: string[] = [];
     
     if (parsed.asset_type) {
