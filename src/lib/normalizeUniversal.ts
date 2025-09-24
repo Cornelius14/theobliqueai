@@ -3,32 +3,38 @@ import { resolveMarket } from "./marketGazetteer";
 
 export type { UniversalIntent };
 
-export type UniversalParsed = {
+export interface UniversalParsed {
   intent: UniversalIntent;
-  role: "buy_side"|"sell_side"|"borrower"|"lender"|"tenant"|"landlord"|"sponsor"|"investor"|"other";
-  asset_type?: string|null;
-  market?: { city?: string|null; state?: string|null; metro?: string|null; country?: string|null }|null;
-  units?: { min?: number|null; max?: number|null }|null;
-  size_sf?: { min?: number|null; max?: number|null }|null;
-  acres?: { min?: number|null; max?: number|null }|null;
-  budget?: { min?: number|null; max?: number|null }|null;
-  cap_rate?: { min?: number|null; max?: number|null }|null;
-  psf?: { min?: number|null; max?: number|null }|null;
-  build_year?: { after?: number|null; before?: number|null }|null;
-  timing?: { months_to_event?: number|null }|null;
+  role: "buy_side" | "sell_side" | "borrower" | "lender" | "tenant" | "landlord" | "sponsor" | "investor" | "other";
+  asset_type?: string | null;
+  market?: { 
+    city?: string | null; 
+    state?: string | null; 
+    metro?: string | null; 
+    country?: string | null 
+  } | null;
+  units?: { min?: number | null; max?: number | null } | null;
+  size_sf?: { min?: number | null; max?: number | null } | null;
+  acres?: { min?: number | null; max?: number | null } | null;
+  budget?: { min?: number | null; max?: number | null } | null;
+  cap_rate?: { min?: number | null; max?: number | null } | null;
+  psf?: { min?: number | null; max?: number | null } | null;
+  build_year?: { after?: number | null; before?: number | null } | null;
+  timing?: { months_to_event?: number | null } | null;
   constraints?: string[];
   red_flags?: string[];
   keywords?: string[];
   confidence?: Record<string, number>;
   missing_reasons?: Record<string, string>;
-};
+}
 
-const toNum = (v:any)=> (typeof v==='number' && isFinite(v)) ? v : null;
+const toNum = (v: any) => (typeof v === 'number' && isFinite(v)) ? v : null;
 
-export function normalizeUniversal(raw:any, original:string): UniversalParsed {
-  const text = String(original||"");
+export function normalizeUniversal(raw: any, original: string): UniversalParsed {
+  const text = String(original || "");
+  
   // 1) intent: pick the MORE SPECIFIC of (LLM intent vs text-mapped intent)
-  const llmIntent = (raw?.intent||"").toString() as UniversalIntent;
+  const llmIntent = (raw?.intent || "").toString() as UniversalIntent;
   const textIntent = mapIntentFromText(text);
   const intent: UniversalIntent =
     (llmIntent === "lease_agreement" && textIntent === "lease_surrender") ? "lease_surrender"
@@ -42,8 +48,8 @@ export function normalizeUniversal(raw:any, original:string): UniversalParsed {
   const s = /(\d{1,3}(?:,\d{3})?)(?:\s*(?:k|K))?\s*[-–]\s*(\d{1,3}(?:,\d{3})?)(?:\s*(?:k|K))?\s*(?:sf|sq\s*ft)/i.exec(text);
   const units = raw?.units ?? (u ? { min: +u[1], max: +u[2] } : null);
   const size_sf = raw?.size_range_sf ?? (s ? {
-    min: +(s[1].replace(/,/g,"") + (/\bk\b/i.test(s[0]) ? "000" : "")),
-    max: +(s[2].replace(/,/g,"") + (/\bk\b/i.test(s[0]) ? "000" : "")),
+    min: +(s[1].replace(/,/g, "") + (/\bk\b/i.test(s[0]) ? "000" : "")),
+    max: +(s[2].replace(/,/g, "") + (/\bk\b/i.test(s[0]) ? "000" : "")),
   } : null);
 
   // 4) role inference
@@ -67,7 +73,7 @@ export function normalizeUniversal(raw:any, original:string): UniversalParsed {
       : null);
 
   // 6) build reasons / confidence (minimal)
-  const missing: Record<string,string> = {};
+  const missing: Record<string, string> = {};
   if (!market) missing.market = "City/metro not explicit (e.g., 'Boston area')";
   if (!units && !size_sf) missing.size = "Size/units not specified";
   if (!asset) missing.asset_type = "Asset type not explicit";
