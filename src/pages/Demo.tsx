@@ -12,6 +12,8 @@ import { seedProspects } from '@/lib/seedCRM';
 import { type Parsed } from '@/lib/llmClient';
 import { normalizeUniversal, computeCoverage, type UniversalParsed } from '@/lib/normalizeUniversal';
 import { synthProspects } from '@/lib/prospectSynth';
+import { buildRefinePlan, type RefinePlan } from '@/lib/buildRefinePlan';
+import RefineBanner from '@/components/RefineBanner';
 
 // Using Prospect type from synth.ts instead of local interface
 
@@ -26,6 +28,7 @@ const Demo = () => {
   const [blocked, setBlocked] = useState(false);
   const [verified, setVerified] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
+  const [refinePlan, setRefinePlan] = useState<RefinePlan | null>(null);
   const { toast } = useToast();
 
   const PARSER_API = "https://mandate-parser-brenertomer.replit.app/parseBuyBox";
@@ -65,6 +68,10 @@ const Demo = () => {
       const cards = synthProspects(parsed, criteria, 12);
       setCrmProspects(cards);
       
+      // Build field-specific refinement plan
+      const plan = buildRefinePlan(parsed);
+      setRefinePlan(plan.items.length ? plan : null);
+      
       // Post-parse gating (soft)
       const hasMarket = !!(parsed?.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
       setBlocked(!hasMarket || cov < 30);
@@ -97,6 +104,10 @@ const Demo = () => {
         // Generate intent-aware CRM cards  
         const cards = synthProspects(parsed, criteria, 12);
         setCrmProspects(cards);
+        
+        // Build field-specific refinement plan
+        const plan = buildRefinePlan(parsed);
+        setRefinePlan(plan.items.length ? plan : null);
         
         const hasMarket = !!(parsed?.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
         setBlocked(!hasMarket || cov < 30);
@@ -206,6 +217,18 @@ const Demo = () => {
 
   const handleNavClick = (anchor: string) => {
     window.location.href = `/#${anchor}`;
+  };
+
+  const handleInsert = (snippet: string) => {
+    setCriteria((prev) => (prev?.trim() ? `${prev.trim()} ${snippet}` : snippet));
+  };
+
+  const isReadyForCRM = (p: any) => {
+    if (!p) return false;
+    const hasCore = p.intent && p.market && p.asset_type;
+    const hasSize = !!p.units || !!p.size_sf;
+    const hasMoney = !!p.budget || !!p.cap_rate;
+    return hasCore && hasSize && hasMoney;
   };
 
   const getCoverageColor = (coverage: number) => {
@@ -354,11 +377,20 @@ const Demo = () => {
                   setCoverage(0);
                   setErrMsg(null);
                   setStatus('idle');
+                  setRefinePlan(null);
                 }}>
                   Reset
                 </Button>
               </div>
             </form>
+            
+            {/* Refine Banner */}
+            <RefineBanner plan={refinePlan} onInsert={handleInsert} />
+            
+            {/* Helper text */}
+            <p className="mt-2 text-xs text-muted-foreground">
+              Try: <code className="bg-muted px-1 rounded">in Boston, MA</code>, <code className="bg-muted px-1 rounded">10–20 units</code>, <code className="bg-muted px-1 rounded">budget ≤ $15M</code>, <code className="bg-muted px-1 rounded">intent: refinance</code>.
+            </p>
             
             {/* Examples */}
             <div className="space-y-2">
@@ -402,10 +434,12 @@ const Demo = () => {
                   )}
                 </div>
                 <div className="flex gap-2 ml-4">
-                  <Button onClick={handleProceed} size="sm" disabled={false}>
-                    Looks right → Proceed
+                  <Button onClick={handleProceed} size="sm" disabled={!isReadyForCRM(parsedBuyBox)} className={isReadyForCRM(parsedBuyBox) ? "" : "opacity-50"}>
+                    {isReadyForCRM(parsedBuyBox) ? "Send to CRM" : "Send to CRM (missing fields)"}
                   </Button>
-                  {blocked && <div className="text-xs text-amber-400 mt-1">Some fields are thin; you can still proceed.</div>}
+                  {!isReadyForCRM(parsedBuyBox) && (
+                    <div className="text-xs text-amber-400 mt-1">Missing required fields for CRM integration.</div>
+                  )}
                   <Button onClick={handleEdit} variant="outline" size="sm">
                     Edit
                   </Button>

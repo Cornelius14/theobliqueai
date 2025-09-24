@@ -26,6 +26,10 @@ export type UniversalIntent =
 
 export function mapIntentFromText(text: string): UniversalIntent {
   const t = (text||"").toLowerCase();
+  // Refinance synonyms: loan/debt maturing, coming due, balloon
+  if (/\b(refi|refinanc(e|ing))\b/.test(t)) return "refinance";
+  if (/\b(loan|debt)\s+(maturing|maturity|coming\s+due|balloon)\b/.test(t)) return "refinance";
+  if (/\bmaturity\s+(in|within)\s+\d+\s*(months?|mos?)\b/.test(t)) return "refinance";
   // Highly specific phrases first (so specificity wins)
   if (t.includes("lease surrender") || t.includes("surrender")) return "lease_surrender";
   if (t.includes("sale-leaseback") || t.includes("sale leaseback")) return "sale_leaseback";

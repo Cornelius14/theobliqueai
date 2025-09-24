@@ -55,6 +55,17 @@ export function normalizeUniversal(raw: any, original: string): UniversalParsed 
   // 4) role inference
   let role: UniversalParsed["role"] = "other";
   const tl = text.toLowerCase();
+  
+  // Budget max: below/under/less than <num> (million|m|bn|b)
+  let budget = raw?.budget ?? null;
+  const bd = tl.match(/\b(below|under|less\s+than|<)\s*\$?\s*([\d,.]+)\s*(million|m|bn|b)?\b/);
+  if (bd) {
+    let num = parseFloat(bd[2].replace(/,/g, ""));
+    const scale = (bd[3]||"").toLowerCase();
+    if (scale === "million" || scale === "m") num *= 1e6;
+    else if (scale === "bn" || scale === "b") num *= 1e9;
+    budget = { min: null, max: Math.round(num) };
+  }
   if (intent === "lease_surrender") role = "tenant";
   else if (/borrower|refi|refinance/.test(tl)) role = "borrower";
   else if (/lender/.test(tl)) role = "lender";
@@ -86,7 +97,7 @@ export function normalizeUniversal(raw: any, original: string): UniversalParsed 
     units,
     size_sf,
     acres: raw?.acres ?? null,
-    budget: raw?.budget ?? raw?.price ?? null,
+    budget,
     cap_rate: raw?.cap_rate ?? null,
     psf: raw?.psf ?? null,
     build_year: raw?.build_year ?? null,

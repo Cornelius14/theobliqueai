@@ -18,14 +18,23 @@ const METROS: Record<string, {city: string, state: string, metro: string}> = {
 
 export function resolveMarket(text: string): Market|null {
   const t = (text||"").toLowerCase();
-  // match "in|near|around <city>" OR "<city> area"
-  const m = t.match(/\b(?:in|near|around)\s+([a-z][a-z\s'-]{2,})\b/) || t.match(/\b([a-z][a-z\s'-]{2,})\s+area\b/);
+
+  // explicit "in/near/around <city> (area)"
+  let m = t.match(/\b(?:in|near|around)\s+([a-z][a-z\s'-]{2,})(?:\s+area)?\b[,.;]?/);
+  if (!m) m = t.match(/\b([a-z][a-z\s'-]{2,})\s+area\b[,.;]?/);
+
   if (m) {
     const key = m[1].trim();
-    const k = key in METROS ? key : Object.keys(METROS).find(x => key.includes(x));
+    const exact = (key in METROS) ? key : Object.keys(METROS).find(x => key.includes(x));
+    if (exact) return METROS[exact];
+  }
+
+  // comma/period split fallback
+  for (const chunk of t.split(/[,\.;]/)) {
+    const k = Object.keys(METROS).find(x => chunk.includes(x));
     if (k) return METROS[k];
   }
-  // bare city token fallback
-  for (const k of Object.keys(METROS)) { if (t.includes(k)) return METROS[k]; }
-  return null;
+
+  const k = Object.keys(METROS).find(x => t.includes(x));
+  return k ? METROS[k] : null;
 }
