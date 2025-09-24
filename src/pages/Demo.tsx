@@ -10,12 +10,14 @@ import { normalizeParsed, coverageScore } from '@/lib/normalize';
 import { quickExtract } from '@/lib/quickExtract';
 import { seedProspects } from '@/lib/seedCRM';
 import { type Parsed } from '@/lib/llmClient';
+import { normalizeUniversal, computeCoverage, type UniversalMandate } from '@/lib/normalizeUniversal';
+import { generateProspects } from '@/lib/generateProspects';
 
 // Using Prospect type from synth.ts instead of local interface
 
 const Demo = () => {
   const [criteria, setCriteria] = useState('');
-  const [parsedBuyBox, setParsedBuyBox] = useState<Parsed | null>(null);
+  const [parsedBuyBox, setParsedBuyBox] = useState<UniversalMandate | null>(null);
   const [crmProspects, setCrmProspects] = useState<any[]>([]);
   const [qualifiedTargets, setQualifiedTargets] = useState<any[]>([]);
   const [meetingsBooked, setMeetingsBooked] = useState<any[]>([]);
@@ -49,22 +51,26 @@ const Demo = () => {
         throw new Error(`HTTP ${res.status}`);
       }
       
-      const parsed = await res.json();
-      console.log('[DealFinder] Remote parsed result:', parsed);
+      const rawParsed = await res.json();
+      console.log('[DealFinder] Remote parsed result:', rawParsed);
       
-      // Use existing normalize + coverage functions
-      const normalizedParsed = (typeof normalizeParsed === "function") ? normalizeParsed(parsed) : parsed;
-      const cov = (typeof coverageScore === "function") ? coverageScore(normalizedParsed) : 100;
+      // Use universal normalizer and coverage
+      const parsed = normalizeUniversal(rawParsed, criteria);
+      const cov = computeCoverage(parsed);
       
-      setParsedBuyBox(normalizedParsed);
+      setParsedBuyBox(parsed);
       setCoverage(cov);
       
+      // Generate intent-aware CRM cards
+      const cards = generateProspects(parsed, criteria, 12);
+      setCrmProspects(cards);
+      
       // Post-parse gating (soft)
-      const hasMarket = !!(normalizedParsed?.market && (normalizedParsed.market.city || normalizedParsed.market.metro || normalizedParsed.market.state || normalizedParsed.market.country));
+      const hasMarket = !!(parsed?.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
       setBlocked(!hasMarket || cov < 30);
       
       // Set for QA inspection
-      (window as any).__parsed = normalizedParsed;
+      (window as any).__parsed = parsed;
       setStatus('idle');
       
     } catch (error: any) {
@@ -73,19 +79,24 @@ const Demo = () => {
       try {
         // Fallback to local parsers
         const localResult = parseBuyBoxLocal(criteria);
-        let parsed = normalizeParsed(localResult);
-        let cov = coverageScore(parsed);
+        let parsed = normalizeUniversal(localResult, criteria);
+        let cov = computeCoverage(parsed);
         
         // If coverage is still low, try quick extract
         if (cov < 30) {
-          parsed = normalizeParsed(quickExtract(criteria));
-          cov = coverageScore(parsed);
+          const quickResult = quickExtract(criteria);
+          parsed = normalizeUniversal(quickResult, criteria);
+          cov = computeCoverage(parsed);
         }
         
         console.log('[DealFinder] Local parsed result:', parsed);
         
         setParsedBuyBox(parsed);
         setCoverage(cov);
+        
+        // Generate intent-aware CRM cards  
+        const cards = generateProspects(parsed, criteria, 12);
+        setCrmProspects(cards);
         
         const hasMarket = !!(parsed?.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
         setBlocked(!hasMarket || cov < 30);
@@ -103,17 +114,16 @@ const Demo = () => {
   };
 
   const handleProceed = () => {
-    if (!parsedBuyBox || blocked) return;
+    if (!parsedBuyBox) return;
 
-    const newProspects = seedProspects(parsedBuyBox);
-    setCrmProspects(newProspects);
+    // Prospects already generated during parse, just clear other columns
     setQualifiedTargets([]); // Clear qualified targets
     setMeetingsBooked([]); // Clear meetings
     setVerified(true);
     
     toast({
-      title: "Prospects added to CRM",
-      description: `${newProspects.length} new prospects matching your criteria.`,
+      title: "Prospects verified",
+      description: `${crmProspects.length} prospects ready for outreach.`,
     });
 
     // Scroll to CRM section
@@ -134,16 +144,16 @@ const Demo = () => {
     }
   };
 
-  const generateBuyBoxSummary = (parsed: Parsed): string => {
+  const generateBuyBoxSummary = (parsed: UniversalMandate): string => {
     const parts: string[] = [];
     
     if (parsed.asset_type) {
       parts.push(parsed.asset_type.charAt(0).toUpperCase() + parsed.asset_type.slice(1));
     }
     
-    if (parsed.size_range_sf) {
-      const min = parsed.size_range_sf.min ? `${(parsed.size_range_sf.min / 1000).toFixed(0)}k` : '';
-      const max = parsed.size_range_sf.max ? `${(parsed.size_range_sf.max / 1000).toFixed(0)}k` : '';
+    if (parsed.size_sf) {
+      const min = parsed.size_sf.min ? `${(parsed.size_sf.min / 1000).toFixed(0)}k` : '';
+      const max = parsed.size_sf.max ? `${(parsed.size_sf.max / 1000).toFixed(0)}k` : '';
       if (min && max) {
         parts.push(`${min}–${max} SF`);
       } else if (min) {
@@ -153,9 +163,9 @@ const Demo = () => {
       }
     }
     
-    if (parsed.units_range) {
-      const min = parsed.units_range.min || '';
-      const max = parsed.units_range.max || '';
+    if (parsed.units) {
+      const min = parsed.units.min || '';
+      const max = parsed.units.max || '';
       if (min && max) {
         parts.push(`${min}–${max} units`);
       } else if (min) {
@@ -171,8 +181,8 @@ const Demo = () => {
       parts.push(`${parsed.market.metro} metro`);
     }
     
-    if (parsed.price_cap_band?.cap_min) {
-      parts.push(`cap ≥ ${parsed.price_cap_band.cap_min}%`);
+    if (parsed.cap_rate?.min) {
+      parts.push(`cap ≥ ${parsed.cap_rate.min}%`);
     }
     
     if (parsed.build_year?.after) {
@@ -420,29 +430,39 @@ const Demo = () => {
                   <span className="font-medium">Intent:</span> {parsedBuyBox.intent || 'Not specified'}
                 </div>
                 <div>
+                  <span className="font-medium">Role:</span> {parsedBuyBox.role || 'Not specified'}
+                </div>
+                <div>
                   <span className="font-medium">Asset Type:</span> {parsedBuyBox.asset_type || 'Not specified'}
                 </div>
                 <div>
                   <span className="font-medium">Market:</span> {parsedBuyBox.market?.city ? `${parsedBuyBox.market.city}, ${parsedBuyBox.market.state}` : parsedBuyBox.market?.metro || 'Not specified'}
                 </div>
                 <div>
-                  <span className="font-medium">Size (SF):</span> {parsedBuyBox.size_range_sf ? `${parsedBuyBox.size_range_sf.min?.toLocaleString()}–${parsedBuyBox.size_range_sf.max?.toLocaleString()} SF` : 'Not specified'}
+                  <span className="font-medium">Size (SF):</span> {parsedBuyBox.size_sf ? `${parsedBuyBox.size_sf.min?.toLocaleString()}–${parsedBuyBox.size_sf.max?.toLocaleString()} SF` : 'Not specified'}
                 </div>
                 <div>
-                  <span className="font-medium">Units:</span> {parsedBuyBox.units_range ? `${parsedBuyBox.units_range.min}–${parsedBuyBox.units_range.max}` : 'Not specified'}
+                  <span className="font-medium">Units:</span> {parsedBuyBox.units ? `${parsedBuyBox.units.min}–${parsedBuyBox.units.max}` : 'Not specified'}
                 </div>
                 <div>
-                  <span className="font-medium">Price/Cap:</span> {
-                    parsedBuyBox.price_cap_band ? 
-                      [
-                        parsedBuyBox.price_cap_band.psf_min && parsedBuyBox.price_cap_band.psf_max ? `$${parsedBuyBox.price_cap_band.psf_min}–$${parsedBuyBox.price_cap_band.psf_max} PSF` : null,
-                        parsedBuyBox.price_cap_band.cap_min ? `${parsedBuyBox.price_cap_band.cap_min}%+ Cap` : null,
-                        parsedBuyBox.price_cap_band.per_door_max ? `≤$${(parsedBuyBox.price_cap_band.per_door_max / 1000).toFixed(0)}k/door` : null,
-                        parsedBuyBox.price_cap_band.budget_min && parsedBuyBox.price_cap_band.budget_max ? `$${(parsedBuyBox.price_cap_band.budget_min / 1000000).toFixed(1)}–$${(parsedBuyBox.price_cap_band.budget_max / 1000000).toFixed(1)}M` : null
-                      ].filter(Boolean).join(', ') || 'Various criteria'
-                    : 'Not specified'
+                  <span className="font-medium">Budget/Cap:</span> {
+                    [
+                      parsedBuyBox.budget?.min && parsedBuyBox.budget?.max ? `$${(parsedBuyBox.budget.min / 1000000).toFixed(1)}–$${(parsedBuyBox.budget.max / 1000000).toFixed(1)}M` : null,
+                      parsedBuyBox.cap_rate?.min ? `${parsedBuyBox.cap_rate.min}%+ Cap` : null,
+                      parsedBuyBox.psf?.min && parsedBuyBox.psf?.max ? `$${parsedBuyBox.psf.min}–$${parsedBuyBox.psf.max} PSF` : null
+                    ].filter(Boolean).join(', ') || 'Not specified'
                   }
                 </div>
+                {parsedBuyBox.timing?.months_to_event && (
+                  <div>
+                    <span className="font-medium">Timing:</span> {parsedBuyBox.timing.months_to_event} months
+                  </div>
+                )}
+                {parsedBuyBox.keywords && parsedBuyBox.keywords.length > 0 && (
+                  <div className="col-span-full">
+                    <span className="font-medium">Keywords:</span> {parsedBuyBox.keywords.join(', ')}
+                  </div>
+                )}
               </div>
               
               {coverage < 60 && (
