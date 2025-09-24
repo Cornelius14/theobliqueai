@@ -1,36 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Menu, X, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Menu, X, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { normalizeUniversal, computeCoverage, type UniversalParsed } from '@/lib/normalizeUniversal';
-import { buildRefinePlan, type RefinePlan } from '@/lib/buildRefinePlan';
-import RefineBanner from '@/components/RefineBanner';
+import { parseBuyBoxLocal } from '@/lib/localParser';
+import { normalizeParsed, coverageScore } from '@/lib/normalize';
+import { quickExtract } from '@/lib/quickExtract';
+import { seedProspects } from '@/lib/seedCRM';
+import { type Parsed } from '@/lib/llmClient';
+import { normalizeUniversal, computeCoverage, type UniversalMandate } from '@/lib/normalizeUniversal';
+import { generateProspects } from '@/lib/generateProspects';
 
-// Global constant for parser URL
-const PARSER_URL = "https://mandate-parser-brenertomer.replit.app"; // HTTPS, no trailing slash
-
-// Strict shape the UI expects from the server
-type Parsed = {
-  intent: string | null,
-  market: { city: string|null, state: string|null } | null,
-  asset: string | null,
-  units: { min: number|null, max: number|null } | null,
-  size_sf: { min: number|null, max: number|null } | null,
-  budget: { max: number|null, currency: "USD" } | null,
-  cap_rate: { min:number|null, max:number|null } | null,
-  timing: string | null,
-  role: string | null,
-  missing: string[],           // e.g., ["market","budget"]
-  notes: string | null,
-  version: string              // e.g., "v1"
-};
+// Using Prospect type from synth.ts instead of local interface
 
 const Demo = () => {
   const [criteria, setCriteria] = useState('');
-  const [parsedBuyBox, setParsedBuyBox] = useState<UniversalParsed | null>(null);
+  const [parsedBuyBox, setParsedBuyBox] = useState<UniversalMandate | null>(null);
   const [crmProspects, setCrmProspects] = useState<any[]>([]);
   const [qualifiedTargets, setQualifiedTargets] = useState<any[]>([]);
   const [meetingsBooked, setMeetingsBooked] = useState<any[]>([]);
@@ -39,242 +26,92 @@ const Demo = () => {
   const [blocked, setBlocked] = useState(false);
   const [verified, setVerified] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
-  const [refinePlan, setRefinePlan] = useState<RefinePlan | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
   const { toast } = useToast();
 
-  let inflightController: AbortController | null = null;
-
-  // Health check on component mount
-  useEffect(() => {
-    const checkHealth = async () => {
-      try {
-        const res = await fetch(`${PARSER_URL}/health`, { method: 'GET' });
-        if (res.ok) {
-          const health = await res.json();
-          setIsConnected(health.ok === true);
-        }
-      } catch (error) {
-        setIsConnected(false);
-      }
-    };
-    checkHealth();
-  }, []);
-
-  async function parseWithLLM(text: string): Promise<Parsed> {
-    if (inflightController) inflightController.abort();
-    inflightController = new AbortController();
-
-    console.log('[DealFinder] POST URL:', `${PARSER_URL}/parseBuyBox`);
-    
-    const res = await fetch(`${PARSER_URL}/parseBuyBox`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-      signal: inflightController.signal,
-    });
-
-    // Normalize error classes so the UI can branch:
-    if (res.status === 429) throw new Error("RATE_LIMIT");
-    if (res.status === 503) throw new Error("LLM_UNAVAILABLE");
-    if (!res.ok) throw new Error(`HTTP_${res.status}`);
-
-    // MUST be JSON of the strict shape documented below
-    const data = await res.json();
-    console.log('[DealFinder] LLM JSON:', data);
-    return data;
-  }
-
-  function normalizeForDisplay(p: Parsed): Parsed {
-    // Display-only normalization; DO NOT mutate model's meaning.
-    const norm = { ...p };
-    if (norm.intent) {
-      const i = norm.intent.toLowerCase();
-      if (["refi", "refinance"].includes(i)) norm.intent = "refinance";
-      if (["mezz", "mezzanine"].includes(i)) norm.intent = "mezz";
-      if (["slb", "sale-leaseback", "sale_leaseback"].includes(i)) norm.intent = "sale_leaseback";
-    }
-    if (norm.asset) {
-      const a = norm.asset.toLowerCase();
-      if (["mf","mfh"].includes(a)) norm.asset = "multifamily";
-      if (["wh","warehouse"].includes(a)) norm.asset = "industrial"; // canonical
-    }
-    return norm;
-  }
-
-  function showRefineBanner(missing: string[], parsed: Parsed) {
-    // This will be handled by existing RefineBanner component
-    const plan = buildRefinePlan(normalizeUniversal(parsed as any, criteria));
-    setRefinePlan(plan.items.length ? plan : null);
-  }
-
-  function clearRefineBanner() { 
-    setRefinePlan(null);
-  }
-
-  function generateProspects(parsed: Parsed, raw: string, N: number): any[] {
-    const prospects: any[] = [];
-    const seed = hashString(raw + (parsed.intent || '') + (parsed.asset || ''));
-    const rnd = createRandom(seed);
-
-    for (let i = 0; i < N; i++) {
-      const prospect = {
-        id: `prospect-${i + 1}`,
-        title: generateTitle(parsed, rnd),
-        matchReason: generateMatchReason(parsed, rnd),
-        city: parsed.market?.city || 'TBD',
-        state: parsed.market?.state || '',
-        badges: generateBadges(parsed, rnd),
-        outreach: {
-          email: rnd() > 0.3 ? 'green' : 'red',
-          sms: rnd() > 0.5 ? 'green' : 'red',
-          call: rnd() > 0.6 ? 'green' : 'red',
-          vm: rnd() > 0.7 ? 'green' : 'red',
-        },
-        contact: {
-          email: `owner${i + 1}@property.com`,
-          phone: `(555) ${String(Math.floor(rnd() * 900) + 100)}-${String(Math.floor(rnd() * 9000) + 1000)}`
-        },
-        price_estimate: generatePriceEstimate(parsed, rnd),
-        built_year: Math.floor(1980 + rnd() * 40)
-      };
-
-      prospects.push(prospect);
-    }
-
-    return prospects;
-  }
-
-  function generateTitle(parsed: Parsed, rnd: () => number): string {
-    const asset = parsed.asset || 'Property';
-    const location = parsed.market?.city ? `${parsed.market.city}${parsed.market.state ? `, ${parsed.market.state}` : ''}` : 'Market TBD';
-    
-    const intentPrefix = getIntentPrefix(parsed.intent);
-    return `${intentPrefix}${asset.charAt(0).toUpperCase() + asset.slice(1)} — ${location}`;
-  }
-
-  function getIntentPrefix(intent: string | null): string {
-    switch (intent) {
-      case 'refinance': return 'Refi Target — ';
-      case 'acquisition': return 'Acquisition — ';
-      case 'lease': return 'Lease — ';
-      default: return '';
-    }
-  }
-
-  function generateMatchReason(parsed: Parsed, rnd: () => number): string {
-    const reasons = [
-      'Matches size and market criteria',
-      'Owner may be motivated to sell',
-      'Good cash flow opportunity',
-      'Value-add potential identified'
-    ];
-    return reasons[Math.floor(rnd() * reasons.length)];
-  }
-
-  function generateBadges(parsed: Parsed, rnd: () => number): string[] {
-    const badges: string[] = [];
-    
-    if (parsed.units) {
-      const min = parsed.units.min || 0;
-      const max = parsed.units.max || min + 10;
-      badges.push(`${min}–${max} units`);
-    }
-    
-    if (parsed.size_sf) {
-      const min = parsed.size_sf.min ? `${Math.round(parsed.size_sf.min / 1000)}k` : '';
-      const max = parsed.size_sf.max ? `${Math.round(parsed.size_sf.max / 1000)}k` : '';
-      if (min && max) {
-        badges.push(`${min}–${max} SF`);
-      } else if (max) {
-        badges.push(`≤${max} SF`);
-      }
-    }
-    
-    if (parsed.budget?.max) {
-      badges.push(`≤$${Math.round(parsed.budget.max / 1000000)}M`);
-    }
-    
-    // Add market warning if missing
-    if (!parsed.market?.city && !parsed.market?.state) {
-      badges.push('⚠️ Add market to improve accuracy');
-    }
-    
-    return badges;
-  }
-
-  function generatePriceEstimate(parsed: Parsed, rnd: () => number): string {
-    const base = 5000000 + rnd() * 15000000;
-    return `$${Math.round(base / 1000000)}M est.`;
-  }
-
-  // Utility functions
-  function hashString(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return Math.abs(hash);
-  }
-
-  function createRandom(seed: number) {
-    let state = seed;
-    return function() {
-      state = (state * 9301 + 49297) % 233280;
-      return state / 233280;
-    };
-  }
+  const PARSER_API = "https://mandate-parser-brenertomer.replit.app/parseBuyBox";
 
   const handleParse = async () => {
-    console.log('[DealFinder] Parse clicked');
-    setStatus('working');
-    setErrMsg(null);
+    console.log('[DealFinder] Parse clicked'); // visible proof
+    if (!criteria.trim()) return;
     
+    setErrMsg(null);
+    setStatus('working');
+    setVerified(false);
+
     try {
-      const raw = criteria.trim();
-      if (!raw) { 
-        setErrMsg("Enter your criteria."); 
-        setStatus('idle'); 
-        return; 
+      // Try remote API first
+      const res = await fetch(PARSER_API, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: criteria })
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
       }
-
-      const parsed: Parsed = await parseWithLLM(raw);
-      const display = normalizeForDisplay(parsed);
-
-      // Convert to UniversalParsed for compatibility
-      const universalParsed = normalizeUniversal(display as any, raw);
-      setParsedBuyBox(universalParsed);
-      setCoverage(computeCoverage(universalParsed));
-
-      if (parsed.missing?.length) {
-        showRefineBanner(parsed.missing, display);
-      } else {
-        clearRefineBanner();
-      }
-
-      // Generate CRM cards ONLY from parsed+raw (no heuristics).
-      setProspects(generateProspects(display, raw, 12));
+      
+      const rawParsed = await res.json();
+      console.log('[DealFinder] Remote parsed result:', rawParsed);
+      
+      // Use universal normalizer and coverage
+      const parsed = normalizeUniversal(rawParsed, criteria);
+      const cov = computeCoverage(parsed);
+      
+      setParsedBuyBox(parsed);
+      setCoverage(cov);
+      
+      // Generate intent-aware CRM cards
+      const cards = generateProspects(parsed, criteria, 12);
+      setCrmProspects(cards);
+      
+      // Post-parse gating (soft)
+      const hasMarket = !!(parsed?.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
+      setBlocked(!hasMarket || cov < 30);
+      
+      // Set for QA inspection
+      (window as any).__parsed = parsed;
       setStatus('idle');
       
-    } catch (err: any) {
-      // Per product requirement: DO NOT fabricate fallback/generic results.
-      if (err?.message === "LLM_UNAVAILABLE") {
-        setErrMsg("LLM unavailable. Try again in a moment.");
-      } else if (err?.message === "RATE_LIMIT") {
-        setErrMsg("Parser busy. Please retry in a few seconds.");
-      } else {
-        setErrMsg("Couldn't reach the parser. Check your network or try again.");
+    } catch (error: any) {
+      console.log('[DealFinder] Remote API failed, trying local parser:', error?.message || error);
+      
+      try {
+        // Fallback to local parsers
+        const localResult = parseBuyBoxLocal(criteria);
+        let parsed = normalizeUniversal(localResult, criteria);
+        let cov = computeCoverage(parsed);
+        
+        // If coverage is still low, try quick extract
+        if (cov < 30) {
+          const quickResult = quickExtract(criteria);
+          parsed = normalizeUniversal(quickResult, criteria);
+          cov = computeCoverage(parsed);
+        }
+        
+        console.log('[DealFinder] Local parsed result:', parsed);
+        
+        setParsedBuyBox(parsed);
+        setCoverage(cov);
+        
+        // Generate intent-aware CRM cards  
+        const cards = generateProspects(parsed, criteria, 12);
+        setCrmProspects(cards);
+        
+        const hasMarket = !!(parsed?.market && (parsed.market.city || parsed.market.metro || parsed.market.state || parsed.market.country));
+        setBlocked(!hasMarket || cov < 30);
+        
+        // Set for QA inspection
+        (window as any).__parsed = parsed;
+        setStatus('idle');
+        
+      } catch (localError) {
+        console.error('[DealFinder] All parsers failed:', localError);
+        setErrMsg('Parsing failed. Please try adjusting your text.');
+        setStatus('error');
       }
-      setCrmProspects([]); // keep empty
-      setStatus('error');
     }
   };
-
-  function setProspects(prospects: any[]) {
-    setCrmProspects(prospects);
-  }
 
   const handleProceed = () => {
     if (!parsedBuyBox) return;
@@ -307,7 +144,7 @@ const Demo = () => {
     }
   };
 
-  const generateBuyBoxSummary = (parsed: UniversalParsed): string => {
+  const generateBuyBoxSummary = (parsed: UniversalMandate): string => {
     const parts: string[] = [];
     
     if (parsed.asset_type) {
@@ -369,18 +206,6 @@ const Demo = () => {
 
   const handleNavClick = (anchor: string) => {
     window.location.href = `/#${anchor}`;
-  };
-
-  const handleInsert = (snippet: string) => {
-    setCriteria((prev) => (prev?.trim() ? `${prev.trim()} ${snippet}` : snippet));
-  };
-
-  const isReadyForCRM = (p: any) => {
-    if (!p) return false;
-    const hasCore = p.intent && p.market && p.asset_type;
-    const hasSize = !!p.units || !!p.size_sf;
-    const hasMoney = !!p.budget || !!p.cap_rate;
-    return hasCore && hasSize && hasMoney;
   };
 
   const getCoverageColor = (coverage: number) => {
@@ -510,21 +335,14 @@ const Demo = () => {
                   type="button" 
                   id="df-parse-btn" 
                   onClick={handleParse} 
-                  disabled={!criteria.trim() || status === 'working'}
+                  disabled={!criteria.trim()}
                   className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
                   aria-label="Parse Criteria"
                 >
-                  {status === 'working' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Parse Criteria
                 </button>
                 {status === 'working' && <div className="text-xs opacity-70">Parsing…</div>}
                 {status === 'error' && <div className="text-xs text-red-400">{errMsg}</div>}
-                {isConnected && (
-                  <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    Connected
-                  </div>
-                )}
                 <Button variant="outline" onClick={() => { 
                   setCriteria(''); 
                   setParsedBuyBox(null); 
@@ -536,20 +354,11 @@ const Demo = () => {
                   setCoverage(0);
                   setErrMsg(null);
                   setStatus('idle');
-                  setRefinePlan(null);
                 }}>
                   Reset
                 </Button>
               </div>
             </form>
-            
-            {/* Refine Banner */}
-            <RefineBanner plan={refinePlan} onInsert={handleInsert} />
-            
-            {/* Helper text */}
-            <p className="mt-2 text-xs text-muted-foreground">
-              Try: <code className="bg-muted px-1 rounded">in Boston, MA</code>, <code className="bg-muted px-1 rounded">10–20 units</code>, <code className="bg-muted px-1 rounded">budget ≤ $15M</code>, <code className="bg-muted px-1 rounded">intent: refinance</code>.
-            </p>
             
             {/* Examples */}
             <div className="space-y-2">
@@ -593,12 +402,10 @@ const Demo = () => {
                   )}
                 </div>
                 <div className="flex gap-2 ml-4">
-                  <Button onClick={handleProceed} size="sm" disabled={!isReadyForCRM(parsedBuyBox)} className={isReadyForCRM(parsedBuyBox) ? "" : "opacity-50"}>
-                    {isReadyForCRM(parsedBuyBox) ? "Send to CRM" : "Send to CRM (missing fields)"}
+                  <Button onClick={handleProceed} size="sm" disabled={false}>
+                    Looks right → Proceed
                   </Button>
-                  {!isReadyForCRM(parsedBuyBox) && (
-                    <div className="text-xs text-amber-400 mt-1">Missing required fields for CRM integration.</div>
-                  )}
+                  {blocked && <div className="text-xs text-amber-400 mt-1">Some fields are thin; you can still proceed.</div>}
                   <Button onClick={handleEdit} variant="outline" size="sm">
                     Edit
                   </Button>
