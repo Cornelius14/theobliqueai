@@ -5,6 +5,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon-new.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        connect-src 'self' https://*.replit.app https://mandate-parser-brenertomer.replit.app data: blob:;
+        img-src 'self' data: blob: https:;
+        script-src 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline';
+        font-src 'self' data:;
+        base-uri 'self';
+      " />
     <title>Oblique AI | Type your mandate; we book qualified meetings—fast</title>
     <meta name="description" content="Type your criteria; we deliver qualified real-estate targets—fast.">
     <meta name="author" content="Cosmos Tasks" />
